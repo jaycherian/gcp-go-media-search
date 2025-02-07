@@ -14,7 +14,7 @@
  limitations under the License.
 -->
 
-# Video Warehouse & Search
+# Media Metadata Extraction & Search
 
 This is a project for processing video, extracting intelligence, persisting to a dataset,
 and enabling AI interactions with the data. The modular side of the project is built on the
