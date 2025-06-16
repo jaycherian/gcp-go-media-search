@@ -92,6 +92,7 @@ vite_bin.vite_binary(
         "4000",
         "--mode",
         "dev",
+        "--host",
     ],
     chdir = package_name(),
     data = [":build"],

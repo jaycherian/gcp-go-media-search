@@ -65,6 +65,7 @@ command(
         "4000",
         "--mode",
         "dev",
+        "--host",
     ],
     command = "//web/apps/media-search:start",
 )
