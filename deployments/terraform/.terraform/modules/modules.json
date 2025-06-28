@@ -1,0 +1,1 @@
+{"Modules":[{"Key":"","Source":"","Dir":"."},{"Key":"bigquery","Source":"./modules/bigquery","Dir":"modules/bigquery"},{"Key":"high_res_resources","Source":"./modules/high_res","Dir":"modules/high_res"},{"Key":"low_res_resources","Source":"./modules/low_res","Dir":"modules/low_res"}]}

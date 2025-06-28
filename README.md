@@ -13,57 +13,91 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-
 # Media Metadata Extraction & Search
 
-This is a project for processing video, extracting intelligence, persisting to a dataset,
-and enabling AI interactions with the data. The modular side of the project is built on the
-Chain of Responsibility (COR) design pattern. Each unit of work is atomic and state is only
-conveyed via Context to each chain and/or command.
+[cite_start]This project provides a complete solution for processing video files, extracting intelligence using Google's Generative AI, persisting the metadata to BigQuery, and enabling powerful semantic search through a web interface. [cite: 564]
 
-## Developer Tools
+## Architecture
 
-Use the following instructions to set up a development environment:
-* [Workstation Setup](WorkstationSetup.md]
-* [Setting Up IntelliJ](SettingUpIntelliJ.md]
-* [Setting Up Visual Studio Code](SettingUpVisualStudioCode.md]
+The project is composed of three main parts:
 
-## Running the Demo
+1.  **Go Backend API (`/cmd/server`)**: A Go server built with Gin that exposes a REST API for file uploads and media search. It listens to Cloud Storage events via Pub/Sub to trigger media processing workflows.
+2.  **React Frontend (`/web/ui`)**: A React and Material-UI single-page application for interacting with the backend, searching for media, and viewing results.
+3.  **GCP Infrastructure (`/deployments/terraform`)**: Terraform scripts to provision all necessary GCP resources, including GCS buckets, Pub/Sub topics, and BigQuery datasets.
+
+[cite_start]The core processing logic uses a **Chain of Responsibility (COR)** pattern [cite: 565][cite_start], where each step (resizing, summary generation, scene extraction) is an atomic, testable unit of work. [cite: 566]
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+* [cite_start]**Go**: Version 1.23 or later [cite: 1]
+* [cite_start]**Node.js**: Version 20.x or later [cite: 529]
+* [cite_start]**PNPM**: `npm install -g pnpm@8` [cite: 532]
+* **FFmpeg**: Must be installed and available in your system's PATH.
+* **Google Cloud SDK**: Authenticated to your GCP account.
+* **Terraform**: For deploying infrastructure.
+
+## Getting Started
+
+### 1. Configure Your Environment
+
+Copy the example Terraform variables file:
 
 ```shell
-# The following command combines two commands to simplify how the demo can be run
-# bazel run //web/apps/api_server and bazel run //web/apps/media-search:start  
-bazel run //:demo
-```
+cp deployments/terraform/terraform.tfvars.example deployments/terraform/terraform.tfvars
 
-## Building
+Edit 
 
-```shell
+deployments/terraform/terraform.tfvars and set your project_id and unique names for high_res_bucket and low_res_bucket. 
 
-# Build all targets
-bazel build //...
+2. Deploy GCP Infrastructure
+Shell
 
-# Build a specific target (The pipeline target in the pkg directory)
-bazel build //pkg/model
+cd deployments/terraform
+terraform init
+terraform apply
+3. Configure the Go Backend
+The backend reads its configuration from TOML files. Create a local configuration for development:
 
-# Build all targets in a specific package
-bazel build //pkg/...
+Shell
 
-# Testing
-bazel test //...
+cp configs/.env.toml configs/.env.local.toml
+Edit 
 
-# Running Commands
+configs/.env.local.toml and fill in the values for your GCP project, API key, and the bucket names you defined in the previous step. 
 
-bazel run //cmd:pipeline
 
-# Cleaning
-bazel clean
+4. Running the Application Locally
+You will need two separate terminal windows.
 
-# Clean all cache
-bazel clean --expunge
+Terminal 1: Start the Go Backend API
 
-# Update Build Files and Dependencies
-# Used when getting "missing strict dependency errors"
-bazel run //:gazelle
-```
+Shell
 
+# From the project root
+go run ./cmd/server
+The API server will start on http://localhost:8080.
+
+Terminal 2: Start the React Frontend
+
+Shell
+
+# From the project root
+cd web/ui
+pnpm install
+pnpm dev
+The UI will be available at http://localhost:5173 (or another port specified by Vite).
+
+Testing
+To run the entire Go test suite:
+
+Shell
+
+# From the project root
+go test ./...
+
+
+
+You can also run the whole application in one go by using the following shell script
+Run the application with: ./start.sh
