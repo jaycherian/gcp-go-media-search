@@ -1,8 +1,0 @@
-{"timestamp":"2025-06-27T23:45:42.340459012Z","severity":"INFO","message":"Logging initialized"}
-{"timestamp":"2025-06-27T23:45:42.357151312Z","severity":"INFO","message":"Tracing initialized"}
-{"timestamp":"2025-06-27T23:45:42.366631682Z","severity":"INFO","message":"[INFO] listening: projects/media-second-search/subscriptions/media_high_res_resources_subscription"}
-{"timestamp":"2025-06-27T23:45:42.367284482Z","severity":"INFO","message":"[INFO] listening: projects/media-second-search/subscriptions/media_low_res_resources_subscription"}
-{"timestamp":"2025-06-27T23:45:42.367380202Z","severity":"INFO","message":"Initialized State"}
-{"timestamp":"2025-06-27T23:45:42.367651102Z","severity":"INFO","message":"Server Ready on port 8080"}
-{"timestamp":"2025-06-27T23:52:44.403437094Z","severity":"INFO","message":"[INFO] failed to export to Google Cloud Trace: context deadline exceeded"}
-{"timestamp":"2025-06-27T23:52:44.403582594Z","severity":"INFO","message":"[INFO] context deadline exceeded"}
