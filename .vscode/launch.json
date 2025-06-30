@@ -18,7 +18,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/backend/go/server",
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}/backend/go",
         }
     ]
 }

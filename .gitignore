@@ -38,3 +38,11 @@ ffmpeg/
 
 # Ignore log files
 *.log
+
+#Sundry files in Jays development environment
+master_source_code.txt
+aggregate_source.sh
+consolidate_backend.sh
+reorganize_consolidated.sh
+reorganize_project.sh
+

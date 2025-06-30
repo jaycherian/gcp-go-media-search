@@ -18,10 +18,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.opentelemetry.io/otel/metric"
 	"log"
 	"os"
 	"strings"
+
+	"go.opentelemetry.io/otel/metric"
 
 	"github.com/BurntSushi/toml"
 	"github.com/google/generative-ai-go/genai"
