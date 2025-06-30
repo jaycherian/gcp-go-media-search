@@ -47,14 +47,14 @@ Copy the example Terraform variables file:
 ```shell
 cp deployments/terraform/terraform.tfvars.example deployments/terraform/terraform.tfvars
 
-Edit 
+Modify the tfvars files to suite your project, api and bucket names. 
 
 deployments/terraform/terraform.tfvars and set your project_id and unique names for high_res_bucket and low_res_bucket. 
 
 2. Deploy GCP Infrastructure
 Shell
 
-cd deployments/terraform
+cd deploy/terraform
 terraform init
 terraform apply
 3. Configure the Go Backend
@@ -62,10 +62,10 @@ The backend reads its configuration from TOML files. Create a local configuratio
 
 Shell
 
-cp configs/.env.toml configs/.env.local.toml
-Edit 
+cp backend/go/configs/.env.toml backend/go/configs/.env.local.toml
 
-configs/.env.local.toml and fill in the values for your GCP project, API key, and the bucket names you defined in the previous step. 
+Edit 
+backend/go/configs/.env.local.toml and fill in the values for your GCP project, API key, and the bucket names you defined in the previous step. 
 
 
 4. Running the Application Locally
@@ -75,19 +75,11 @@ Terminal 1: Start the Go Backend API
 
 Shell
 
-# From the project root
-go run ./cmd/server
-The API server will start on http://localhost:8080.
+./start_backend.sh
 
 Terminal 2: Start the React Frontend
 
-Shell
-
-# From the project root
-cd web/ui
-pnpm install
-pnpm dev
-The UI will be available at http://localhost:5173 (or another port specified by Vite).
+./start_frontend.sh
 
 Testing
 To run the entire Go test suite:
