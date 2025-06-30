@@ -1,3 +1,4 @@
+```mermaid
 sequenceDiagram
     actor User
     participant Go API Server

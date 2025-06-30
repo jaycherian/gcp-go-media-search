@@ -2,7 +2,7 @@
 # ==============================================================================
 # Start Script for Media Search Application
 # ==============================================================================
-# This script starts both the backend Go server and the frontend Vite server
+# This script starts JUST the the frontend Vite server
 # for local development.
 #
 # USAGE: Run this script from the root of the project.
@@ -14,12 +14,9 @@ set -e
 
 
 
-# 'trap' catches signals. When this script receives an EXIT signal (e.g., from
-# Ctrl+C or when it finishes), it will run the 'cleanup' function.
-trap cleanup EXIT
 
 # Navigate to the UI directory to run the frontend commands.
-cd web/ui
+cd frontend/web/ui
 
 echo "Installing frontend dependencies (if needed)..."
 pnpm install

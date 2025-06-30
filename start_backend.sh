@@ -2,8 +2,7 @@
 # ==============================================================================
 # Start Script for Media Search Application
 # ==============================================================================
-# This script starts both the backend Go server and the frontend Vite server
-# for local development.
+# This script starts JUST the backend Go server for local development.
 #
 # USAGE: Run this script from the root of the project.
 # $ ./start.sh
@@ -36,23 +35,3 @@ cleanup() {
 # 'trap' catches signals. When this script receives an EXIT signal (e.g., from
 # Ctrl+C or when it finishes), it will run the 'cleanup' function.
 trap cleanup EXIT
-
-# Navigate to the UI directory to run the frontend commands.
-cd web/ui
-
-echo "Installing frontend dependencies (if needed)..."
-pnpm install
-
-echo "Starting Vite frontend server in the foreground..."
-echo "The UI will be accessible on your local network and potentially the public internet."
-echo "Press Ctrl+C to stop both servers."
-
-# Start the Vite dev server in the foreground.
-# The `--host` flag makes the server listen on all network interfaces (0.0.0.0),
-# not just localhost, making it accessible from other devices on the network.
-# The double dash (`--`) is used to pass the flag through pnpm to the underlying vite command.
-pnpm dev -- --host
-
-# When `pnpm dev` is stopped (Ctrl+C), the script will exit,
-# triggering the `trap` and running the `cleanup` function.
-

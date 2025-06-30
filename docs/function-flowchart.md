@@ -1,3 +1,4 @@
+```mermaid
 flowchart TD
  subgraph subGraph0["Flow 1: File Upload & Transcoding"]
     direction LR

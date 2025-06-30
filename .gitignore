@@ -33,3 +33,8 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+# Ignore the entire ffmpeg directory as we will no longer be using that
+ffmpeg/
+
+# Ignore log files
+*.log

@@ -16,7 +16,7 @@ echo "Starting Go backend server in the background..."
 echo "Backend logs will be written to backend.log"
 
 # Run the Go server in the background (&) and redirect its output.
-go run ./cmd/server > backend.log 2>&1 &
+(cd backend/go && go run ./server) > backend.log 2>&1 &
 
 # Get the Process ID (PID) of the last background command.
 BACKEND_PID=$!
