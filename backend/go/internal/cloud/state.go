@@ -12,6 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package cloud provides components for interacting with Google Cloud services.
+// This file is central to the application's architecture, as it's responsible for
+// initializing and holding all the client objects needed to communicate with
+// various Google Cloud services. It acts as a dependency injection container,
+// creating a single, shared `ServiceClients` struct that can be passed throughout
+// the application.
+//
+// Logic Flow:
+//  1. The `NewCloudServiceClients` function is called at application startup.
+//  2. It takes the application's configuration (`Config`) and a `context.Context`.
+//  3. It iteratively initializes clients for Storage, Pub/Sub, GenAI, and BigQuery.
+//  4. It then reads the configuration to create and configure specific service wrappers,
+//     like Pub/Sub listeners and AI models, storing them in maps.
+//  5. All initialized clients and services are bundled into a single `ServiceClients` struct.
+//  6. This struct is then used by other parts of the application (like API handlers and workflows)
+//     to perform their tasks.
+//
+// Structs:
+//   - ServiceClients: A container struct holding all initialized Google Cloud service clients
+//     and service wrappers, acting as a central state manager for external connections.
+//
+// Functions:
+//   - Close: A convenience method to gracefully shut down all client connections.
+//   - NewCloudServiceClients: A factory function that creates and configures all necessary
+//     Google Cloud clients based on the application's configuration.
 package cloud
 
 import (
@@ -26,20 +51,25 @@ import (
 	"google.golang.org/api/option"
 )
 
-// ServiceClients is the state machine for the cloud clients.
+// ServiceClients is a struct that acts as a central container for all the clients
+// that interact with external Google Cloud services. This pattern is a form of
+// dependency injection, making it easy to manage and share these client connections
+// across the entire application.
 type ServiceClients struct {
-	StorageClient   *storage.Client                         // The Google Cloud Storage client.
-	PubsubClient    *pubsub.Client                          // The Google Cloud Pub/Sub client.
-	GenAIClient     *genai.Client                           // The Google Cloud Vertex AI client.
-	BiqQueryClient  *bigquery.Client                        // The Google Cloud BigQuery client.
-	IAMClient       *credentials.IamCredentialsClient       // The IAM credentials client for signing URLs.
-	PubSubListeners map[string]*PubSubListener              // A map of Pub/Sub listeners, keyed by subscription name.
-	EmbeddingModels map[string]*genai.EmbeddingModel        // A map of Vertex AI embedding models, keyed by model name.
-	AgentModels     map[string]*QuotaAwareGenerativeAIModel // A map of Vertex AI LLM models, keyed by model name.
+	StorageClient   *storage.Client                         // Client for Google Cloud Storage (GCS).
+	PubsubClient    *pubsub.Client                          // Client for Google Cloud Pub/Sub.
+	GenAIClient     *genai.Client                           // Client for Google's Generative AI services (Vertex AI).
+	BiqQueryClient  *bigquery.Client                        // Client for Google Cloud BigQuery.
+	IAMClient       *credentials.IamCredentialsClient       // Client for IAM to sign things like GCS URLs.
+	PubSubListeners map[string]*PubSubListener              // A map of active Pub/Sub listeners, keyed by a logical name from the config.
+	EmbeddingModels map[string]*genai.EmbeddingModel        // A map of configured GenAI embedding models, keyed by a logical name.
+	AgentModels     map[string]*QuotaAwareGenerativeAIModel // A map of configured GenAI agent (LLM) models, keyed by a logical name.
 }
 
-// Close A close method to ensure all clients are shut down,
-// these are handled using a closable context, but here for clean testing.
+// Close is a utility method to gracefully shut down all the active client connections.
+// While client connections are typically managed by the application's root context,
+// this method provides an explicit way to release resources, which is especially
+// useful in tests or for controlled shutdowns.
 func (c *ServiceClients) Close() {
 	_ = c.StorageClient.Close()
 	_ = c.PubsubClient.Close()
@@ -47,7 +77,17 @@ func (c *ServiceClients) Close() {
 	_ = c.BiqQueryClient.Close()
 }
 
-// NewCloudServiceClients A helper function for correctly initializing the Google Cloud Services based on the configuration.
+// NewCloudServiceClients is a factory function that initializes all required Google Cloud
+// service clients based on the provided configuration. It serves as the main entry point
+// for setting up the application's external dependencies.
+//
+// Inputs:
+//   - ctx: The root context.Context for the application, used to manage the lifecycle of the clients.
+//   - config: A pointer to the loaded application configuration (`Config`).
+//
+// Outputs:
+//   - *ServiceClients: A pointer to the fully initialized ServiceClients struct.
+//   - error: An error if any of the clients fail to initialize.
 func NewCloudServiceClients(ctx context.Context, config *Config) (cloud *ServiceClients, err error) {
 	// Create a new Google Cloud Storage client.
 	sc, err := storage.NewClient(ctx)
@@ -55,13 +95,13 @@ func NewCloudServiceClients(ctx context.Context, config *Config) (cloud *Service
 		return nil, err
 	}
 
-	// Create a new Google Cloud Pub/Sub client.
+	// Create a new Google Cloud Pub/Sub client for the specified project.
 	pc, err := pubsub.NewClient(ctx, config.Application.GoogleProjectId)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create a new Google Cloud Vertex AI client.
+	// Create a new Generative AI client using an API key for authentication.
 	gc, err := genai.NewClient(ctx, option.WithAPIKey(config.Application.GoogleAPIKey))
 	if err != nil {
 		log.Printf("error creating genai client: %v", err)
@@ -74,27 +114,30 @@ func NewCloudServiceClients(ctx context.Context, config *Config) (cloud *Service
 		return nil, err
 	}
 
-	// Create Pub/Sub listeners based on the configuration.
+	// Iterate through the subscription configurations and create a PubSubListener for each one.
+	// The command is initially set to `nil` because it will be attached later when the workflows are built.
 	subscriptions := make(map[string]*PubSubListener)
-	for sub := range config.TopicSubscriptions {
-		values := config.TopicSubscriptions[sub]
+	for subKey := range config.TopicSubscriptions {
+		values := config.TopicSubscriptions[subKey]
 		actual, err := NewPubSubListener(pc, values.Name, nil)
 		if err != nil {
 			return nil, err
 		}
-		subscriptions[sub] = actual
+		subscriptions[subKey] = actual
 	}
 
-	// Create Vertex AI embedding models based on the configuration.
+	// Iterate through the embedding model configurations and create a reference to each model.
 	embeddingModels := make(map[string]*genai.EmbeddingModel)
-	for emb := range config.EmbeddingModels {
-		embeddingModels[emb] = gc.EmbeddingModel(config.EmbeddingModels[emb].Model)
+	for embKey := range config.EmbeddingModels {
+		embeddingModels[embKey] = gc.EmbeddingModel(config.EmbeddingModels[embKey].Model)
 	}
 
-	// Create Vertex AI LLM models based on the configuration.
+	// Iterate through the agent model configurations, create a generative model for each,
+	// apply its specific settings (temperature, TopK, etc.), and wrap it in our
+	// custom rate-limiting (`QuotaAware`) model.
 	agentModels := make(map[string]*QuotaAwareGenerativeAIModel)
-	for am := range config.AgentModels {
-		values := config.AgentModels[am]
+	for amKey := range config.AgentModels {
+		values := config.AgentModels[amKey]
 		model := gc.GenerativeModel(values.Model)
 		model.SetTemperature(values.Temperature)
 		model.SetTopK(values.TopK)
@@ -103,14 +146,17 @@ func NewCloudServiceClients(ctx context.Context, config *Config) (cloud *Service
 		model.SystemInstruction = &genai.Content{
 			Parts: []genai.Part{genai.Text(values.SystemInstructions)},
 		}
+		// Apply the default safety settings and desired output format.
 		model.SafetySettings = DefaultSafetySettings
 		model.ResponseMIMEType = values.OutputFormat
-		model.Tools = []*genai.Tool{}
+		model.Tools = []*genai.Tool{} // Initialize with no tools by default.
+
+		// Wrap the configured model with our rate limiter.
 		wrappedAgent := NewQuotaAwareModel(model, values.RateLimit)
-		agentModels[am] = wrappedAgent
+		agentModels[amKey] = wrappedAgent
 	}
 
-	// Create a new ServiceClients instance with all the initialized clients.
+	// Assemble the final ServiceClients struct with all the initialized clients and models.
 	cloud = &ServiceClients{
 		StorageClient:   sc,
 		PubsubClient:    pc,

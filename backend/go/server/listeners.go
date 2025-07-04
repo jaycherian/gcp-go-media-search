@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package main contains the logic for setting up and starting the Pub/Sub message listeners.
+// These listeners are responsible for initiating backend processing workflows in response to events,
+// such as new file uploads to Google Cloud Storage.
+//
+// Functions:
+//   - SetupListeners: Initializes and starts the listeners for both high-resolution
+//     and low-resolution media topics, attaching the corresponding processing workflows.
 package main
 
 import (
@@ -22,14 +29,34 @@ import (
 	"github.com/jaycherian/gcp-go-media-search/internal/core/workflow"
 )
 
+// SetupListeners configures and starts the background Pub/Sub listeners.
+// It creates the necessary media processing workflows and attaches them to the
+// appropriate topic listeners.
+//
+// Inputs:
+//   - config: The application's configuration, containing settings for storage, topics, etc.
+//   - cloudClients: A struct containing all the initialized Google Cloud service clients.
+//   - ctx: The application's root context, used to manage the lifecycle of the listeners.
+//
+// Outputs:
+//   - This function does not return any value. It starts the listeners as background goroutines.
 func SetupListeners(config *cloud.Config, cloudClients *cloud.ServiceClients, ctx context.Context) {
 	// TODO - Externalize the destination topic and ffmpeg command
+
+	// Create the workflow for resizing high-resolution videos.
+	// This workflow is triggered by messages on the HiResTopic and uses FFmpeg to transcode files.
 	mediaResizeWorkflow := workflow.NewMediaResizeWorkflow(config, cloudClients, "/snap/bin/ffmpeg", &model.MediaFormatFilter{Width: "240"})
+	// Assign the resize workflow as the command to be executed by the listener for the high-resolution topic.
 	cloudClients.PubSubListeners["HiResTopic"].SetCommand(mediaResizeWorkflow)
+	// Start the listener in a background goroutine. It will now begin receiving and processing messages from its subscription.
 	cloudClients.PubSubListeners["HiResTopic"].Listen(ctx)
 
+	// Create the workflow for ingesting and analyzing low-resolution videos.
+	// This workflow uses the "creative-flash" GenAI model for analysis.
 	mediaIngestion := workflow.NewMediaReaderPipeline(config, cloudClients, "creative-flash")
 
+	// Assign the ingestion workflow to the listener for the low-resolution topic.
 	cloudClients.PubSubListeners["LowResTopic"].SetCommand(mediaIngestion)
+	// Start the listener for the low-resolution topic.
 	cloudClients.PubSubListeners["LowResTopic"].Listen(ctx)
 }
