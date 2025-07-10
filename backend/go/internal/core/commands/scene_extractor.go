@@ -120,7 +120,7 @@ func (s *SceneExtractor) IsExecutable(context cor.Context) bool {
 func (s *SceneExtractor) Execute(context cor.Context) {
 	// Retrieve necessary data from the context.
 	summary := context.Get(s.GetInputParam()).(*model.MediaSummary)
-	videoFile := context.Get(GetVideoUploadFileParameterName()).(*genai.File)
+	videoFile := context.Get(GetVideoUploadFileParameterName()).(*genai.FileData)
 
 	// --- Prepare data for the prompt template ---
 	exampleScene := model.GetExampleScene()
@@ -230,7 +230,7 @@ func CreateJob(
 	summaryText string,
 	exampleText string,
 	template template.Template,
-	videoFile *genai.File,
+	videoFile *genai.FileData,
 	model *cloud.QuotaAwareGenerativeAIModel,
 	timeSpan *model.TimeSpan,
 ) *SceneJob {
@@ -272,7 +272,7 @@ func CreateJob(
 		{Parts: []*genai.Part{
 			{Text: tsPrompt},
 			{FileData: &genai.FileData{
-				FileURI:  videoFile.URI,
+				FileURI:  videoFile.FileURI,
 				MIMEType: videoFile.MIMEType,
 			}},
 		},

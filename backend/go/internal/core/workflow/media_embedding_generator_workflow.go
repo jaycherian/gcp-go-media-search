@@ -126,6 +126,7 @@ func NewMediaEmbeddingGeneratorWorkflow(config *cloud.Config, serviceClients *cl
 		BaseCommand:            *cor.NewBaseCommand("media-embedding-generator"),
 		genaiEmbedding:         serviceClients.EmbeddingModels["multi-lingual"],
 		bigqueryClient:         serviceClients.BiqQueryClient,
+		modelName:              config.EmbeddingModels["multi-lingual"].Model,
 		dataset:                config.BigQueryDataSource.DatasetName,
 		mediaTable:             config.BigQueryDataSource.MediaTable,
 		embeddingTable:         config.BigQueryDataSource.EmbeddingTable,
@@ -186,7 +187,7 @@ func (m *MediaEmbeddingGeneratorWorkflow) Execute(context cor.Context) {
 			// Embed the content using the specified embedding model.
 			// Replace "gemini-embedding-exp-03-07" with your desired embedding model.
 			resultemb, erremb := m.genaiEmbedding.EmbedContent(context.GetContext(), m.modelName, contents, nil)
-			if err != nil {
+			if erremb != nil {
 				fmt.Print("Fatal error when creating embeddings", erremb)
 			}
 			// Commented for Muziris

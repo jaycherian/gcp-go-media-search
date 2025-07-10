@@ -97,7 +97,7 @@ func GetVideoUploadFileParameterName() string {
 func (v *MediaUpload) Execute(context cor.Context) {
 	// Retrieve the original GCS object details from the context to get metadata.
 	gcsFile := context.Get(cloud.GetGCSObjectName()).(*cloud.GCSObject)
-	GCSFileLink := fmt.Sprintf("gs://%s/%s ", gcsFile.Bucket, gcsFile.Name)
+	GCSFileLink := fmt.Sprintf("gs://%s/%s", gcsFile.Bucket, gcsFile.Name)
 	fmt.Print("\nThe GCS filename for media upload is: ", GCSFileLink)
 	var GCSFileStruct genai.FileData
 	GCSFileStruct.FileURI = GCSFileLink

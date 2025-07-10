@@ -74,7 +74,8 @@ func (v *MediaCleanup) IsExecutable(context cor.Context) bool {
 	// Checks that the context is not nil, a value for the video file parameter exists,
 	// and that the value is a valid *genai.File object.
 	return context != nil && context.Get(GetVideoUploadFileParameterName()) != nil &&
-		context.Get(GetVideoUploadFileParameterName()).(*genai.File) != nil
+		//Muziris change
+		context.Get(GetVideoUploadFileParameterName()).(*genai.FileData) != nil
 }
 
 // Execute performs the deletion logic.
@@ -84,8 +85,9 @@ func (v *MediaCleanup) IsExecutable(context cor.Context) bool {
 func (v *MediaCleanup) Execute(context cor.Context) {
 	// Retrieve the file object from the context using a shared parameter name function
 	// to ensure consistency across commands.
-	fil := context.Get(GetVideoUploadFileParameterName()).(*genai.File)
-	fmt.Print("Within meadia cleanup for file :", fil.Name)
+	//Muziris Change
+	fil := context.Get(GetVideoUploadFileParameterName()).(*genai.FileData)
+	fmt.Print("Within meadia cleanup for file :", fil.FileURI)
 
 	// Muziris Change: the fact of the matter is that with the new genai libraries, there is no need to
 	// "Upload" video files for processing. We can just provide the URI to GCS objects for the model

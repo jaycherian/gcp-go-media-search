@@ -168,10 +168,12 @@ func GenerateMultiModalResponse(
 		if candidate.Content != nil {
 			// Each candidate's content can have multiple parts; iterate and concatenate them.
 			for _, part := range candidate.Content.Parts {
-				value += fmt.Sprint(part)
+				value += fmt.Sprint(part.Text)
 			}
 		}
 	}
+	value = strings.TrimPrefix(value, "```json")
+	value = strings.TrimSuffix(value, "```")
 	return value, nil
 }
 
