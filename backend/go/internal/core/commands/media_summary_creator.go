@@ -47,10 +47,10 @@ import (
 
 	"go.opentelemetry.io/otel/metric"
 
-	"github.com/google/generative-ai-go/genai"
 	"github.com/jaycherian/gcp-go-media-search/internal/cloud"
 	"github.com/jaycherian/gcp-go-media-search/internal/core/cor"
 	"github.com/jaycherian/gcp-go-media-search/internal/core/model"
+	"google.golang.org/genai"
 )
 
 // MediaSummaryCreator is a command that uses a generative model to create a
@@ -126,7 +126,7 @@ func (t *MediaSummaryCreator) GenerateParams(_ cor.Context) map[string]interface
 //   - context: The shared `cor.Context` for this workflow execution.
 func (t *MediaSummaryCreator) Execute(context cor.Context) {
 	// Retrieve the `genai.File` object (the handle to the media file in the File Service) from the context.
-	mediaFile := context.Get(t.GetInputParam()).(*genai.File)
+	mediaFile := context.Get(t.GetInputParam()).(*genai.FileData)
 
 	// Use a buffer to execute the Go template, substituting the dynamic params.
 	var buffer bytes.Buffer
@@ -137,16 +137,31 @@ func (t *MediaSummaryCreator) Execute(context cor.Context) {
 		return
 	}
 
+	// Muziris Change
+	// // Prepare the parts for the multi-modal request to Gemini.
+	// parts := make([]genai.Part, 0)
+	// // Part 1: The media file itself, referenced by its URI.
+	// parts = append(parts, cloud.NewFileData(mediaFile.URI, mediaFile.MIMEType))
+	// // Part 2: The text prompt generated from the template.
+	// parts = append(parts, cloud.NewTextPart(buffer.String()))
+
+	//Muziris Change
 	// Prepare the parts for the multi-modal request to Gemini.
-	parts := make([]genai.Part, 0)
-	// Part 1: The media file itself, referenced by its URI.
-	parts = append(parts, cloud.NewFileData(mediaFile.URI, mediaFile.MIMEType))
-	// Part 2: The text prompt generated from the template.
-	parts = append(parts, cloud.NewTextPart(buffer.String()))
+	contents := []*genai.Content{
+		{Parts: []*genai.Part{
+			{Text: buffer.String()},
+			{FileData: &genai.FileData{
+				FileURI:  mediaFile.FileURI,
+				MIMEType: mediaFile.MIMEType,
+			}},
+		},
+			Role: "user"},
+	}
 
 	// Call the helper function to send the request to the model. This helper
 	// encapsulates retry logic and telemetry updates.
-	out, err := cloud.GenerateMultiModalResponse(context.GetContext(), t.geminiInputTokenCounter, t.geminiOutputTokenCounter, t.geminiRetryCounter, 0, t.generativeAIModel, parts...)
+	// Muziris Change
+	out, err := cloud.GenerateMultiModalResponse(context.GetContext(), t.geminiInputTokenCounter, t.geminiOutputTokenCounter, t.geminiRetryCounter, 0, t.generativeAIModel, contents)
 	if err != nil {
 		t.GetErrorCounter().Add(context.GetContext(), 1)
 		context.AddError(t.GetName(), fmt.Errorf("gemini request failed: %w", err))

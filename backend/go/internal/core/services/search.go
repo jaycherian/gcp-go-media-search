@@ -26,20 +26,22 @@ import (
 	"strings"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/google/generative-ai-go/genai"
 	"github.com/jaycherian/gcp-go-media-search/internal/core/model"
 	"google.golang.org/api/iterator"
+	"google.golang.org/genai"
 )
 
 // SearchService encapsulates the clients and configuration needed to perform
 // semantic search operations. It holds references to the BigQuery client for
 // database interaction and a GenAI embedding model for converting text to vectors.
 type SearchService struct {
-	BigqueryClient *bigquery.Client      // Client for interacting with Google BigQuery.
-	EmbeddingModel *genai.EmbeddingModel // The generative AI model used to create vector embeddings from text.
-	DatasetName    string                // The name of the BigQuery dataset.
-	MediaTable     string                // The name of the table holding primary media metadata.
-	EmbeddingTable string                // The name of the table holding the vector embeddings for scenes.
+	BigqueryClient *bigquery.Client // Client for interacting with Google BigQuery.
+	EmbeddingModel *genai.Models    // The generative AI model used to create vector embeddings from text.
+	//Muziris Change: Accomodate the latest genai libraries
+	ModelName      string // The name of the model
+	DatasetName    string // The name of the BigQuery dataset.
+	MediaTable     string // The name of the table holding primary media metadata.
+	EmbeddingTable string // The name of the table holding the vector embeddings for scenes.
 }
 
 // FindScenes takes a text query, generates a vector embedding for it, and then
@@ -61,9 +63,17 @@ func (s *SearchService) FindScenes(ctx context.Context, query string, maxResults
 
 	// --- Step 1: Generate Embedding for the Query ---
 	// Call the generative AI model to convert the user's text query into a vector embedding.
-	searchEmbeddings, err := s.EmbeddingModel.EmbedContent(ctx, genai.Text(query))
+	//Muziris Change: new Embedcontent call because of deprecrated genai libraries
+
+	contents := []*genai.Content{
+		genai.NewContentFromText(query, genai.RoleUser),
+	}
+
+	// Embed the content using the specified embedding model.
+	// Replace "gemini-embedding-exp-03-07" with your desired embedding model.
+	searchEmbeddings, erremb := s.EmbeddingModel.EmbedContent(ctx, s.ModelName, contents, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate embeddings: %w", err)
+		fmt.Print("Fatal error when creating embeddings", erremb)
 	}
 
 	// --- Step 2: Prepare the Query for BigQuery ---
@@ -74,7 +84,7 @@ func (s *SearchService) FindScenes(ctx context.Context, query string, maxResults
 	// string of float values. We convert the float32 slice from the embedding model
 	// into a slice of strings.
 	var stringArray []string
-	for _, f := range searchEmbeddings.Embedding.Values {
+	for _, f := range searchEmbeddings.Embeddings[0].Values {
 		stringArray = append(stringArray, strconv.FormatFloat(float64(f), 'f', -1, 64))
 	}
 

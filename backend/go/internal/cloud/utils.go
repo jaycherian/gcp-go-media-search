@@ -41,7 +41,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 
 	"github.com/BurntSushi/toml"
-	"github.com/google/generative-ai-go/genai"
+	"google.golang.org/genai"
 )
 
 // Cloud Constants define key strings and values used throughout the package,
@@ -141,9 +141,9 @@ func GenerateMultiModalResponse(
 	retryCounter metric.Int64Counter,
 	tryCount int,
 	model *QuotaAwareGenerativeAIModel,
-	parts ...genai.Part) (value string, err error) {
+	content []*genai.Content) (value string, err error) {
 	// Make the request to the generative model.
-	resp, err := model.GenerateContent(ctx, parts...)
+	resp, err := model.GenerateContent(ctx, content)
 	// Record the token counts for both the prompt and the generated candidates.
 	inputTokenCounter.Add(ctx, int64(resp.UsageMetadata.PromptTokenCount))
 	outputTokenCounter.Add(ctx, int64(resp.UsageMetadata.CandidatesTokenCount))
@@ -154,7 +154,7 @@ func GenerateMultiModalResponse(
 			// If we haven't reached the max retry count, increment the retry counter
 			// and recursively call this function to try again.
 			retryCounter.Add(ctx, 1)
-			return GenerateMultiModalResponse(ctx, inputTokenCounter, outputTokenCounter, retryCounter, tryCount+1, model, parts...)
+			return GenerateMultiModalResponse(ctx, inputTokenCounter, outputTokenCounter, retryCounter, tryCount+1, model, content)
 		} else {
 			// If max retries have been reached, return the error.
 			return "", err
@@ -183,7 +183,9 @@ func GenerateMultiModalResponse(
 //
 // Outputs:
 //   - genai.Part: A `genai.Part` containing the text.
-func NewTextPart(in string) genai.Part {
+//
+// Muziris Change
+func NewTextPart(in string) []*genai.Content {
 	return genai.Text(in)
 }
 
@@ -196,6 +198,8 @@ func NewTextPart(in string) genai.Part {
 //
 // Outputs:
 //   - genai.Part: A `genai.Part` containing the file data.
-func NewFileData(in string, mimeType string) genai.Part {
-	return genai.FileData{URI: in, MIMEType: mimeType}
+//
+// Muziris Change
+func NewFileData(in string, mimeType string) genai.FileData {
+	return genai.FileData{FileURI: in, MIMEType: mimeType}
 }

@@ -28,13 +28,20 @@
 //  2. It calls the `client.DeleteFile` method, passing the file's name to
 //     permanently remove it from the service.
 //  3. It handles any errors that might occur during the deletion process.
+
+//	IMPORTANT UPDATE:
+//
+// Muziris Change: the fact of the matter is that with the new genai libraries, there is no need to
+// "Upload" video files for processing. We can just provide the URI to GCS objects for the model
+// This function can ideally be deprecrated but for now to keep the chain of responsibility intact,
+// this function will be a shell that returns the GCS object name and Mime type.
 package commands
 
 import (
 	"fmt"
 
-	"github.com/google/generative-ai-go/genai"
 	"github.com/jaycherian/gcp-go-media-search/internal/core/cor"
+	"google.golang.org/genai"
 )
 
 // MediaCleanup is a command that deletes a file from the Vertex AI File Service.
@@ -78,15 +85,20 @@ func (v *MediaCleanup) Execute(context cor.Context) {
 	// Retrieve the file object from the context using a shared parameter name function
 	// to ensure consistency across commands.
 	fil := context.Get(GetVideoUploadFileParameterName()).(*genai.File)
+	fmt.Print("Within meadia cleanup for file :", fil.Name)
 
+	// Muziris Change: the fact of the matter is that with the new genai libraries, there is no need to
+	// "Upload" video files for processing. We can just provide the URI to GCS objects for the model
+	// This function can ideally be deprecrated but for now to keep the chain of responsibility intact,
+	// this function will be a shell that returns the GCS object name and Mime type.
 	// Call the Vertex AI API to delete the file using its unique name.
-	err := v.client.DeleteFile(context.GetContext(), fil.Name)
-	if err != nil {
-		// If an error occurs, record it in the context and update metrics.
-		v.GetErrorCounter().Add(context.GetContext(), 1)
-		context.AddError(v.GetName(), fmt.Errorf("failed to delete file %s from Vertex AI: %w", fil.Name, err))
-		return
-	}
+	// err := v.client.DeleteFile(context.GetContext(), fil.Name)
+	// if err != nil {
+	// 	// If an error occurs, record it in the context and update metrics.
+	// 	v.GetErrorCounter().Add(context.GetContext(), 1)
+	// 	context.AddError(v.GetName(), fmt.Errorf("failed to delete file %s from Vertex AI: %w", fil.Name, err))
+	// 	return
+	// }
 	// If successful, increment the success counter.
 	v.GetSuccessCounter().Add(context.GetContext(), 1)
 }

@@ -41,8 +41,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/google/generative-ai-go/genai"
 	"golang.org/x/time/rate"
+	"google.golang.org/genai"
 )
 
 // QuotaAwareGenerativeAIModel is a decorator struct that wraps the standard
@@ -50,8 +50,10 @@ import (
 // the original model, it inherits all its methods, but we can override specific
 // ones, like `GenerateContent`, to add our custom logic.
 type QuotaAwareGenerativeAIModel struct {
-	*genai.GenerativeModel              // The embedded base Vertex AI LLM. All its fields and methods are available here.
-	RateLimit              rate.Limiter // A rate limiter from Go's standard library to control request frequency.
+	GenerativeContentConfig *genai.GenerateContentConfig // The embedded base Vertex AI LLM. All its fields and methods are available here.
+	ModelName               string
+	ModelHandle             *genai.Models
+	RateLimit               rate.Limiter // A rate limiter from Go's standard library to control request frequency.
 }
 
 // NewQuotaAwareModel is a constructor function that creates a new
@@ -64,9 +66,11 @@ type QuotaAwareGenerativeAIModel struct {
 //
 // Outputs:
 //   - *QuotaAwareGenerativeAIModel: A pointer to the newly created wrapper.
-func NewQuotaAwareModel(wrapped *genai.GenerativeModel, requestsPerSecond int) *QuotaAwareGenerativeAIModel {
+func NewQuotaAwareModel(wrapped *genai.GenerateContentConfig, name string, ModelHand *genai.Models, requestsPerSecond int) *QuotaAwareGenerativeAIModel {
 	return &QuotaAwareGenerativeAIModel{
-		GenerativeModel: wrapped,
+		GenerativeContentConfig: wrapped,
+		ModelName:               name,
+		ModelHandle:             ModelHand,
 		// Creates a new rate limiter that allows a burst of `requestsPerSecond` events
 		// and replenishes the "token bucket" at a rate of 1 token per second.
 		RateLimit: *rate.NewLimiter(rate.Every(time.Second/1), requestsPerSecond),
@@ -94,11 +98,11 @@ func NewQuotaAwareModel(wrapped *genai.GenerativeModel, requestsPerSecond int) *
 // Outputs:
 //   - *genai.GenerateContentResponse: The response from the AI model if successful.
 //   - error: An error if the request fails after all retries or if another issue occurs.
-func (q *QuotaAwareGenerativeAIModel) GenerateContent(ctx context.Context, parts ...genai.Part) (resp *genai.GenerateContentResponse, err error) {
+func (q *QuotaAwareGenerativeAIModel) GenerateContent(ctx context.Context, content []*genai.Content) (resp *genai.GenerateContentResponse, err error) {
 	// The `Allow()` method checks if an event can happen now. It's a non-blocking check.
 	if q.RateLimit.Allow() {
 		// If allowed, proceed to call the actual Generative AI model.
-		resp, err = q.GenerativeModel.GenerateContent(ctx, parts...)
+		resp, err = q.ModelHandle.GenerateContent(ctx, q.ModelName, content, q.GenerativeContentConfig)
 		if err != nil {
 			// If an error occurred during the API call, start the retry logic.
 			// Get the current retry count from the context. `Value()` returns an interface{},
@@ -113,7 +117,7 @@ func (q *QuotaAwareGenerativeAIModel) GenerateContent(ctx context.Context, parts
 			// Wait for one minute before retrying to give the service time to recover.
 			time.Sleep(time.Minute * 1)
 			// Recursively call this function to try again.
-			return q.GenerateContent(errCtx, parts...)
+			return q.ModelHandle.GenerateContent(errCtx, q.ModelName, content, q.GenerativeContentConfig)
 		}
 		// If the API call was successful, return the response and a nil error.
 		return resp, err
@@ -122,6 +126,6 @@ func (q *QuotaAwareGenerativeAIModel) GenerateContent(ctx context.Context, parts
 		// This pauses the execution of this specific request, effectively "queueing" it.
 		time.Sleep(time.Second * 5)
 		// After waiting, recursively call this function to try obtaining a token from the rate limiter again.
-		return q.GenerateContent(ctx, parts...)
+		return q.ModelHandle.GenerateContent(ctx, q.ModelName, content, q.GenerativeContentConfig)
 	}
 }

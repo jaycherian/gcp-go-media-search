@@ -30,9 +30,9 @@ import (
 	"go.opentelemetry.io/otel/codes"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/google/generative-ai-go/genai"
 	"github.com/jaycherian/gcp-go-media-search/internal/core/model"
 	"google.golang.org/api/iterator"
+	"google.golang.org/genai"
 )
 
 // MediaEmbeddingGeneratorWorkflow defines a background job that periodically
@@ -41,10 +41,14 @@ import (
 // script using a Vertex AI model and saves them back to a separate BigQuery table.
 // This implements the cor.Command interface, allowing it to be part of a larger chain,
 // although it's designed to run independently as a background task.
+
 type MediaEmbeddingGeneratorWorkflow struct {
 	cor.BaseCommand
-	genaiEmbedding         *genai.EmbeddingModel
-	bigqueryClient         *bigquery.Client
+	// Muziris change genai does not have an EmbeddingModels structure but has a Models structure now.
+	genaiEmbedding *genai.Models
+	bigqueryClient *bigquery.Client
+	//Muziris change need model name for later in the code when embedding content
+	modelName              string
 	dataset                string
 	mediaTable             string
 	embeddingTable         string
@@ -172,19 +176,32 @@ func (m *MediaEmbeddingGeneratorWorkflow) Execute(context cor.Context) {
 		// Iterate over each scene within the media object.
 		for _, scene := range value.Scenes {
 			// Create a new embedding object, initializing it with metadata.
-			in := model.NewSceneEmbedding(value.Id, scene.SequenceNumber, m.genaiEmbedding.Name())
+			in := model.NewSceneEmbedding(value.Id, scene.SequenceNumber, m.modelName)
 			// Call the Vertex AI model to generate an embedding for the scene's script text.
-			resp, err := m.genaiEmbedding.EmbedContent(context.GetContext(), genai.Text(scene.Script))
-			if err != nil {
-				context.AddError(m.GetName(), err)
-				return
-			}
-			// The response contains the vector embedding as a slice of floats.
-			// Append these values to our embedding object.
-			for _, f := range resp.Embedding.Values {
-				in.Embeddings = append(in.Embeddings, float64(f))
+
+			contents := []*genai.Content{
+				genai.NewContentFromText(scene.Script, genai.RoleUser),
 			}
 
+			// Embed the content using the specified embedding model.
+			// Replace "gemini-embedding-exp-03-07" with your desired embedding model.
+			resultemb, erremb := m.genaiEmbedding.EmbedContent(context.GetContext(), m.modelName, contents, nil)
+			if err != nil {
+				fmt.Print("Fatal error when creating embeddings", erremb)
+			}
+			// Commented for Muziris
+			// resp, err := m.genaiEmbedding.EmbedContent(context.GetContext(), genai.Text(scene.Script))
+			// if err != nil {
+			// 	context.AddError(m.GetName(), err)
+			// 	return
+			// }
+			// The response contains the vector embedding as a slice of floats.
+			// Append these values to our embedding object.
+			for _, f := range resultemb.Embeddings {
+				for _, g := range f.Values {
+					in.Embeddings = append(in.Embeddings, float64(g))
+				}
+			}
 			// Add the fully populated embedding object to the list for insertion.
 			toInsert = append(toInsert, in)
 		}

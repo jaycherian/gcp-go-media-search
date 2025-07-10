@@ -34,7 +34,7 @@
 //   - NewConfig: A constructor that initializes a new Config object with empty maps.
 package cloud
 
-import "github.com/google/generative-ai-go/genai"
+import "google.golang.org/genai"
 
 // DefaultSafetySettings defines the default content safety thresholds for GenAI models.
 // These settings are configured to be non-restrictive, allowing all content categories
@@ -44,19 +44,19 @@ import "github.com/google/generative-ai-go/genai"
 var DefaultSafetySettings = []*genai.SafetySetting{
 	{
 		Category:  genai.HarmCategoryDangerousContent,
-		Threshold: genai.HarmBlockNone,
+		Threshold: genai.HarmBlockThresholdBlockNone,
 	},
 	{
 		Category:  genai.HarmCategoryHarassment,
-		Threshold: genai.HarmBlockNone,
+		Threshold: genai.HarmBlockThresholdBlockNone,
 	},
 	{
 		Category:  genai.HarmCategoryHateSpeech,
-		Threshold: genai.HarmBlockNone,
+		Threshold: genai.HarmBlockThresholdBlockNone,
 	},
 	{
 		Category:  genai.HarmCategorySexuallyExplicit,
-		Threshold: genai.HarmBlockNone,
+		Threshold: genai.HarmBlockThresholdBlockNone,
 	},
 }
 
@@ -85,7 +85,7 @@ type VertexAiLLMModel struct {
 	SystemInstructions string  `toml:"system_instructions"` // The system instructions for the LLM.
 	Temperature        float32 `toml:"temperature"`         // The temperature parameter for the LLM.
 	TopP               float32 `toml:"top_p"`               // The top_p parameter for the LLM.
-	TopK               int32   `toml:"top_k"`               // The top_k parameter for the LLM.
+	TopK               float32 `toml:"top_k"`               // The top_k parameter for the LLM.
 	MaxTokens          int32   `toml:"max_tokens"`          // The maximum number of tokens for the LLM output.
 	OutputFormat       string  `toml:"output_format"`       // The desired output format for the LLM.
 	EnableGoogle       bool    `toml:"enable_google"`       // Whether to enable Google Search for the LLM.

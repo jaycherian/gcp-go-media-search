@@ -147,6 +147,7 @@ func InitState(ctx context.Context) {
 	state.searchService = &services.SearchService{
 		BigqueryClient: cloudClients.BiqQueryClient,
 		EmbeddingModel: cloudClients.EmbeddingModels["multi-lingual"],
+		ModelName:      config.EmbeddingModels["multi-lingual"].Model,
 		DatasetName:    datasetName,
 		MediaTable:     mediaTableName,
 		EmbeddingTable: embeddingTableName,

@@ -41,14 +41,14 @@ package cloud
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"cloud.google.com/go/bigquery"
 	credentials "cloud.google.com/go/iam/credentials/apiv1"
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
-	"github.com/google/generative-ai-go/genai"
-	"google.golang.org/api/option"
+	"google.golang.org/genai"
 )
 
 // ServiceClients is a struct that acts as a central container for all the clients
@@ -56,13 +56,14 @@ import (
 // dependency injection, making it easy to manage and share these client connections
 // across the entire application.
 type ServiceClients struct {
-	StorageClient   *storage.Client                         // Client for Google Cloud Storage (GCS).
-	PubsubClient    *pubsub.Client                          // Client for Google Cloud Pub/Sub.
-	GenAIClient     *genai.Client                           // Client for Google's Generative AI services (Vertex AI).
-	BiqQueryClient  *bigquery.Client                        // Client for Google Cloud BigQuery.
-	IAMClient       *credentials.IamCredentialsClient       // Client for IAM to sign things like GCS URLs.
-	PubSubListeners map[string]*PubSubListener              // A map of active Pub/Sub listeners, keyed by a logical name from the config.
-	EmbeddingModels map[string]*genai.EmbeddingModel        // A map of configured GenAI embedding models, keyed by a logical name.
+	StorageClient   *storage.Client                   // Client for Google Cloud Storage (GCS).
+	PubsubClient    *pubsub.Client                    // Client for Google Cloud Pub/Sub.
+	GenAIClient     *genai.Client                     // Client for Google's Generative AI services (Vertex AI).
+	BiqQueryClient  *bigquery.Client                  // Client for Google Cloud BigQuery.
+	IAMClient       *credentials.IamCredentialsClient // Client for IAM to sign things like GCS URLs.
+	PubSubListeners map[string]*PubSubListener        // A map of active Pub/Sub listeners, keyed by a logical name from the config.
+	//TODO: Do this later when we do step 2 embedding
+	EmbeddingModels map[string]*genai.Models                // A map of configured GenAI embedding models, keyed by a logical name.
 	AgentModels     map[string]*QuotaAwareGenerativeAIModel // A map of configured GenAI agent (LLM) models, keyed by a logical name.
 }
 
@@ -73,7 +74,8 @@ type ServiceClients struct {
 func (c *ServiceClients) Close() {
 	_ = c.StorageClient.Close()
 	_ = c.PubsubClient.Close()
-	_ = c.GenAIClient.Close()
+	//TODO: New library does not have a client close function
+	//TODO _ = c.GenAIClient.Close()
 	_ = c.BiqQueryClient.Close()
 }
 
@@ -102,8 +104,15 @@ func NewCloudServiceClients(ctx context.Context, config *Config) (cloud *Service
 	}
 
 	// Create a new Generative AI client using an API key for authentication.
-	gc, err := genai.NewClient(ctx, option.WithAPIKey(config.Application.GoogleAPIKey))
+	fmt.Print("The project ID is:", config.Application.GoogleProjectId)
+	fmt.Print("The project location is", config.Application.GoogleLocation)
+	gc, err := genai.NewClient(ctx, &genai.ClientConfig{
+		Project:  config.Application.GoogleProjectId,
+		Location: config.Application.GoogleLocation,
+		Backend:  genai.BackendVertexAI,
+	})
 	if err != nil {
+		fmt.Print("Error creating genai client:", err)
 		log.Printf("error creating genai client: %v", err)
 		return nil, err
 	}
@@ -127,9 +136,11 @@ func NewCloudServiceClients(ctx context.Context, config *Config) (cloud *Service
 	}
 
 	// Iterate through the embedding model configurations and create a reference to each model.
-	embeddingModels := make(map[string]*genai.EmbeddingModel)
+	embeddingModels := make(map[string]*genai.Models)
 	for embKey := range config.EmbeddingModels {
-		embeddingModels[embKey] = gc.EmbeddingModel(config.EmbeddingModels[embKey].Model)
+		//	embeddingModels[embKey] = gc.GenerativeModel(config.EmbeddingModels[embKey].Model)
+		embeddingModels[embKey] = gc.Models
+		fmt.Print("looping through embeddingmodels, this one is: \n", config.EmbeddingModels[embKey].Model)
 	}
 
 	// Iterate through the agent model configurations, create a generative model for each,
@@ -138,21 +149,33 @@ func NewCloudServiceClients(ctx context.Context, config *Config) (cloud *Service
 	agentModels := make(map[string]*QuotaAwareGenerativeAIModel)
 	for amKey := range config.AgentModels {
 		values := config.AgentModels[amKey]
-		model := gc.GenerativeModel(values.Model)
-		model.SetTemperature(values.Temperature)
-		model.SetTopK(values.TopK)
-		model.SetTopP(values.TopP)
-		model.SetMaxOutputTokens(values.MaxTokens)
-		model.SystemInstruction = &genai.Content{
-			Parts: []genai.Part{genai.Text(values.SystemInstructions)},
-		}
-		// Apply the default safety settings and desired output format.
-		model.SafetySettings = DefaultSafetySettings
-		model.ResponseMIMEType = values.OutputFormat
-		model.Tools = []*genai.Tool{} // Initialize with no tools by default.
+		fmt.Print("The value of amkey is: \n", amKey)
+		fmt.Print("The content in Agnentmodel is \n", values)
 
-		// Wrap the configured model with our rate limiter.
-		wrappedAgent := NewQuotaAwareModel(model, values.RateLimit)
+		model := &genai.GenerateContentConfig{
+			Temperature:       genai.Ptr[float32](values.Temperature),
+			TopP:              genai.Ptr[float32](values.TopP),
+			TopK:              genai.Ptr[float32](values.TopK),
+			MaxOutputTokens:   values.MaxTokens,
+			SystemInstruction: &genai.Content{Parts: []*genai.Part{{Text: values.SystemInstructions}}},
+			SafetySettings:    DefaultSafetySettings,
+			ResponseMIMEType:  values.OutputFormat,
+			Tools:             []*genai.Tool{},
+		}
+		// 	model.SetTemperature(values.Temperature)
+		// 	model.SetTopK(values.TopK)
+		// 	model.SetTopP(values.TopP)
+		// 	model.SetMaxOutputTokens(values.MaxTokens)
+		// 	model.SystemInstruction = &genai.Content{
+		// 		Parts: []genai.Part{genai.Text(values.SystemInstructions)},
+		// 	}
+		// 	// Apply the default safety settings and desired output format.
+		// 	model.SafetySettings = DefaultSafetySettings
+		// 	model.ResponseMIMEType = values.OutputFormat
+		// 	model.Tools = []*genai.Tool{} // Initialize with no tools by default.
+
+		// 	// Wrap the configured model with our rate limiter.
+		wrappedAgent := NewQuotaAwareModel(model, values.Model, gc.Models, values.RateLimit)
 		agentModels[amKey] = wrappedAgent
 	}
 

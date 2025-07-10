@@ -57,13 +57,13 @@ import (
 
 	"go.opentelemetry.io/otel/metric"
 
-	"github.com/google/generative-ai-go/genai"
 	"github.com/jaycherian/gcp-go-media-search/internal/cloud"
 	"github.com/jaycherian/gcp-go-media-search/internal/core/cor"
 	"github.com/jaycherian/gcp-go-media-search/internal/core/model"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/genai"
 )
 
 // SceneExtractor is a command that processes scene timestamps in parallel to generate detailed descriptions.
@@ -207,7 +207,7 @@ type SceneJob struct {
 	geminiRetryCounter       metric.Int64Counter
 	timeSpan                 *model.TimeSpan
 	span                     trace.Span
-	parts                    []genai.Part
+	contents                 []*genai.Content
 	model                    *cloud.QuotaAwareGenerativeAIModel
 	err                      error
 }
@@ -258,10 +258,25 @@ func CreateJob(
 	}
 	tsPrompt := doc.String()
 
-	// Assemble the multimodal parts for the Gemini API call.
-	parts := []genai.Part{
-		cloud.NewFileData(videoFile.URI, videoFile.MIMEType),
-		cloud.NewTextPart(tsPrompt),
+	//Muziris Change: To accomodate how the new genai golan libaries work
+
+	// // Assemble the multimodal parts for the Gemini API call.
+	// parts := []*genai.Part {
+	// 	cloud.NewFileData(videoFile.URI, videoFile.MIMEType),
+	// 	cloud.NewTextPart(tsPrompt),
+	// }
+
+	//Muziris Change
+	// Prepare the parts for the multi-modal request to Gemini.
+	contents := []*genai.Content{
+		{Parts: []*genai.Part{
+			{Text: tsPrompt},
+			{FileData: &genai.FileData{
+				FileURI:  videoFile.URI,
+				MIMEType: videoFile.MIMEType,
+			}},
+		},
+			Role: "user"},
 	}
 
 	return &SceneJob{
@@ -272,7 +287,7 @@ func CreateJob(
 		geminiRetryCounter:       geminiRetryCounter,
 		timeSpan:                 timeSpan,
 		span:                     sceneSpan,
-		parts:                    parts,
+		contents:                 contents,
 		model:                    model,
 	}
 }
@@ -297,7 +312,7 @@ func sceneWorker(jobs <-chan *SceneJob, results chan<- *SceneResponse, wg *sync.
 		}
 
 		// Call the generative model to get the scene description.
-		out, err := cloud.GenerateMultiModalResponse(j.ctx, j.geminiInputTokenCounter, j.geminiOutputTokenCounter, j.geminiRetryCounter, 0, j.model, j.parts...)
+		out, err := cloud.GenerateMultiModalResponse(j.ctx, j.geminiInputTokenCounter, j.geminiOutputTokenCounter, j.geminiRetryCounter, 0, j.model, j.contents)
 		if err != nil {
 			j.Close(codes.Error, "scene extract failed")
 			results <- &SceneResponse{err: err}

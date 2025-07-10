@@ -38,6 +38,13 @@
 //     object, which acts as a handle or reference, into the context. Subsequent
 //     commands, like `MediaSummaryCreator`, will use this handle to tell the
 //     Gemini model which file to analyze.
+
+//	IMPORTANT UPDATE:
+//
+// Muziris Change: the fact of the matter is that with the new genai libraries, there is no need to
+// "Upload" video files for processing. We can just provide the URI to GCS objects for the model
+// This function can ideally be deprecrated but for now to keep the chain of responsibility intact,
+// this function will be a shell that returns the GCS object name and Mime type.
 package commands
 
 import (
@@ -46,8 +53,8 @@ import (
 
 	"github.com/jaycherian/gcp-go-media-search/internal/cloud"
 
-	"github.com/google/generative-ai-go/genai"
 	"github.com/jaycherian/gcp-go-media-search/internal/core/cor"
+	"google.golang.org/genai"
 )
 
 // MediaUpload is a command that uploads a local file to the Vertex AI File Service
@@ -82,48 +89,58 @@ func GetVideoUploadFileParameterName() string {
 //
 // Inputs:
 //   - context: The shared `cor.Context` for this workflow execution.
+//
+// Muziris Change: the fact of the matter is that with the new genai libraries, there is no need to
+// "Upload" video files for processing. We can just provide the URI to GCS objects for the model
+// This function can ideally be deprecrated but for now to keep the chain of responsibility intact,
+// this function will be a shell that returns the GCS object name and Mime type.
 func (v *MediaUpload) Execute(context cor.Context) {
 	// Retrieve the original GCS object details from the context to get metadata.
 	gcsFile := context.Get(cloud.GetGCSObjectName()).(*cloud.GCSObject)
-	// Retrieve the local filesystem path of the temporary file to be uploaded.
-	fileName := context.Get(v.GetInputParam()).(string)
+	GCSFileLink := fmt.Sprintf("gs://%s/%s ", gcsFile.Bucket, gcsFile.Name)
+	fmt.Print("\nThe GCS filename for media upload is: ", GCSFileLink)
+	var GCSFileStruct genai.FileData
+	GCSFileStruct.FileURI = GCSFileLink
+	GCSFileStruct.MIMEType = gcsFile.MIMEType
+	// // Retrieve the local filesystem path of the temporary file to be uploaded.
+	// fileName := context.Get(v.GetInputParam()).(string)
 
-	// Call the SDK to upload the file from the local path. Pass along the original
-	// display name and MIME type for consistency in the File Service.
-	genFil, err := v.client.UploadFileFromPath(context.GetContext(), fileName, &genai.UploadFileOptions{DisplayName: gcsFile.Name, MIMEType: gcsFile.MIMEType})
-	if err != nil {
-		v.GetErrorCounter().Add(context.GetContext(), 1)
-		context.AddError(v.GetName(), fmt.Errorf("failed to upload file to File Service: %w", err))
-		return
-	}
+	// // Call the SDK to upload the file from the local path. Pass along the original
+	// // display name and MIME type for consistency in the File Service.
+	// genFil, err := v.client.UploadFileFromPath(context.GetContext(), fileName, &genai.UploadFileOptions{DisplayName: gcsFile.Name, MIMEType: gcsFile.MIMEType})
+	// if err != nil {
+	// 	v.GetErrorCounter().Add(context.GetContext(), 1)
+	// 	context.AddError(v.GetName(), fmt.Errorf("failed to upload file to File Service: %w", err))
+	// 	return
+	// }
 
-	// === Polling Loop ===
-	// The file is not ready for use immediately after the upload call.
-	// We must wait for Vertex AI to finish processing it.
-	for genFil.State == genai.FileStateProcessing {
-		// Pause for a short duration to avoid excessive API calls.
-		time.Sleep(5 * time.Second)
-		var err error
-		// Fetch the latest status of the file.
-		if genFil, err = v.client.GetFile(context.GetContext(), genFil.Name); err != nil {
-			v.GetErrorCounter().Add(context.GetContext(), 1)
-			context.AddError(v.GetName(), fmt.Errorf("failed to get file status during processing: %w", err))
-			return
-		}
-	}
+	// // === Polling Loop ===
+	// // The file is not ready for use immediately after the upload call.
+	// // We must wait for Vertex AI to finish processing it.
+	// for genFil.State == genai.FileStateProcessing {
+	// 	// Pause for a short duration to avoid excessive API calls.
+	// 	time.Sleep(5 * time.Second)
+	// 	var err error
+	// 	// Fetch the latest status of the file.
+	// 	if genFil, err = v.client.GetFile(context.GetContext(), genFil.Name); err != nil {
+	// 		v.GetErrorCounter().Add(context.GetContext(), 1)
+	// 		context.AddError(v.GetName(), fmt.Errorf("failed to get file status during processing: %w", err))
+	// 		return
+	// 	}
+	// }
 
-	// If the file processing failed on the backend, this is a critical error.
-	if genFil.State == genai.FileStateFailed {
-		v.GetErrorCounter().Add(context.GetContext(), 1)
-		context.AddError(v.GetName(), err)
-		return
-	}
+	// // If the file processing failed on the backend, this is a critical error.
+	// if genFil.State == genai.FileStateFailed {
+	// 	v.GetErrorCounter().Add(context.GetContext(), 1)
+	// 	context.AddError(v.GetName(), err)
+	// 	return
+	// }
 
 	// Once the loop completes and the file is active, record the success.
 	v.GetSuccessCounter().Add(context.GetContext(), 1)
 
 	// Store the `genai.File` handle in the context using the canonical key.
-	context.Add(GetVideoUploadFileParameterName(), genFil)
+	context.Add(GetVideoUploadFileParameterName(), &GCSFileStruct)
 	// Also place it in the default output parameter for the next command in the chain.
-	context.Add(v.GetOutputParam(), genFil)
+	context.Add(v.GetOutputParam(), &GCSFileStruct)
 }

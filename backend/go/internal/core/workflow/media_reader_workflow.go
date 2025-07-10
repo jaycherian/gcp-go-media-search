@@ -23,10 +23,10 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/storage"
-	"github.com/google/generative-ai-go/genai"
 	"github.com/jaycherian/gcp-go-media-search/internal/cloud"
 	"github.com/jaycherian/gcp-go-media-search/internal/core/commands"
 	"github.com/jaycherian/gcp-go-media-search/internal/core/cor"
+	"google.golang.org/genai"
 )
 
 // MediaReaderWorkflow orchestrates the entire process of analyzing a low-resolution
@@ -79,11 +79,15 @@ func (m *MediaReaderWorkflow) initializeChain() {
 
 	// Step 2: Download the media file from the GCS bucket specified in the trigger
 	// message and save it to a temporary local file on the server's disk.
+	// Muziris change: With the new libraries it is no longer necessary to have a temp file locally and upload it.
+	// We can analyze and extract scenes right from the file in GCS bucket
 	out.AddCommand(commands.NewGCSToTempFile("gcs-to-temp-file", m.storageClient, "media-summary-"))
 
 	// Step 3: Upload the temporary local file to the Vertex AI File Service.
 	// This service makes the file available for analysis by Gemini models.
 	// The operation is given a 5-minute timeout.
+	// Muziris change: With the new libraries it is no longer necessary to have a temp file locally and upload it.
+	// We can analyze and extract scenes right from the file in GCS bucket
 	out.AddCommand(commands.NewMediaUpload("media-upload", m.genaiClient, 300*time.Second))
 
 	// Step 4: Generate a high-level summary of the media file using Gemini.
