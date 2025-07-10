@@ -76,12 +76,38 @@ func (s *MediaSummaryJsonToStruct) Execute(context cor.Context) {
 
 	// Retrieve the GCSObject which contains details about the original file location.
 	gcsFile := context.Get(cloud.GetGCSObjectName()).(*cloud.GCSObject)
+	// Muziris Change: In some cases where the model cannot find the release date, the release date field is populated
+	// with a string "Not Specified" or "N/A". However the MediaSummary Json structure expecs an int and so does BQ.
+	// Easy fix is to deterministically take the field and if its a string set it to int 0.
+	// Step 1: Unmarshal into a generic map to inspect the data.
+	var rawData map[string]interface{}
+	if err := json.Unmarshal([]byte(in), &rawData); err != nil {
+		s.GetErrorCounter().Add(context.GetContext(), 1)
+		context.AddError(s.GetName(), fmt.Errorf("failed to pre-parse media summary JSON: %w", err))
+		return
+	}
 
+	// Step 2: Check the 'release_year' field. If it's a string, change it to 0.
+	if val, ok := rawData["release_year"]; ok {
+		if _, isString := val.(string); isString {
+			rawData["release_year"] = 0
+		}
+	}
+
+	// Step 3: Marshal the corrected map back into a JSON byte slice.
+	correctedJSON, err := json.Marshal(rawData)
+	if err != nil {
+		s.GetErrorCounter().Add(context.GetContext(), 1)
+		context.AddError(s.GetName(), fmt.Errorf("failed to re-marshal corrected data: %w", err))
+		return
+	}
+
+	// Step 4: Unmarshal the now-clean JSON into the final struct.
 	// Create an empty MediaSummary struct to hold the parsed data.
 	doc := &model.MediaSummary{}
 
 	// Unmarshal (parse) the JSON string into the Go struct.
-	err := json.Unmarshal([]byte(in), &doc)
+	err = json.Unmarshal(correctedJSON, &doc)
 	if err != nil {
 		// If parsing fails, it's a critical error. Record it and stop.
 		s.GetErrorCounter().Add(context.GetContext(), 1)
