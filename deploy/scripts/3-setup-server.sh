@@ -145,19 +145,6 @@ install_node_env() {
     else
         print_success "PNPM is already installed."
     fi
-
-    # Install Bazel tools
-    if ! command_exists bazel; then
-        run_and_check "Installing @bazel/bazelisk" npm install -g @bazel/bazelisk
-    else
-        print_success "Bazelisk is already installed."
-    fi
-
-    if ! command_exists ibazel; then
-        run_and_check "Installing @bazel/ibazel" npm install -g @bazel/ibazel
-    else
-        print_success "iBazel is already installed."
-    fi
 }
 
 # --- Go Environment ---
