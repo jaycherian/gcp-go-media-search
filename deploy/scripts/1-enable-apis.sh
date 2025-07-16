@@ -3,6 +3,11 @@
  
 PROJECT=${1:-`gcloud config get-value project`}
 
+PROJECT_NUM=$(gcloud projects describe $PROJECT --format="value(projectNumber)")
+VERTEX_SA_EMAIL="service-$PROJECT_NUM@gcp-sa-aiplatform.iam.gserviceaccount.com"
+
+echo "Enabling APIs..."
+
 declare -a apis=(
     "aiplatform.googleapis.com"
     "compute.googleapis.com"
@@ -23,4 +28,36 @@ do
     gcloud services enable $api --project $PROJECT
 
 done
+
+echo "✅ APIs enabled."
+
+# Create a service agent for Vertex AI api
+
+echo "Creating Vertex AI service agent if it doesn't exist..."
+gcloud beta services identity create --service=aiplatform.googleapis.com 
+echo "✅ Vertex AI Service Agent created."
+
+echo "Assigning roles to Vertext AI Service Agent on project $PROJECT"
+
+# Array of roles to be assigned
+ROLES=(
+  "roles/aiplatform.serviceAgent"
+  "roles/storage.objectAdmin"
+  "roles/bigquery.dataViewer"
+  "roles/bigquery.jobUser"
+  "roles/pubsub.admin"
+)
+
+# Loop through the roles and assign them to the service account
+for ROLE in "${ROLES[@]}"
+do
+  echo "Granting $ROLE..."
+  gcloud projects add-iam-policy-binding "$PROJECT" \
+    --member=serviceAccount:$SA_EMAIL \
+    --role="$ROLE" \
+    --condition=None > /dev/null
+done
+
+echo "✅ Vertex AI Service Agent roles granted."
+
 
