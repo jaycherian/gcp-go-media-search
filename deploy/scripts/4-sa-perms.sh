@@ -15,23 +15,6 @@ if [ -z "$PROJECT_ID" ]; then
   exit 1
 fi
 
-# Check if the Cloud Resource Manager API is enabled
-echo "Checking if the Cloud Resource Manager API is enabled for project $PROJECT_ID..."
-API_ENABLED=$(gcloud services list --enabled --project="$PROJECT_ID" --filter="config.name:cloudresourcemanager.googleapis.com" --format="value(config.name)")
-
-if [[ -z "$API_ENABLED" ]]; then
-  echo "Cloud Resource Manager API is not enabled. Enabling now..."
-  gcloud services enable cloudresourcemanager.googleapis.com --project="$PROJECT_ID"
-  if [ $? -ne 0 ]; then
-    echo "Failed to enable Cloud Resource Manager API. Please check your permissions and try again."
-    exit 1
-  fi
-  echo "API enabled successfully."
-else
-  echo "Cloud Resource Manager API is already enabled."
-fi
-
-
 echo "Assigning roles to $SERVICE_ACCOUNT on project $PROJECT_ID"
 
 # Array of roles to be assigned
