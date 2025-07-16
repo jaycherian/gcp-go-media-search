@@ -4,6 +4,7 @@
 PROJECT=${1:-`gcloud config get-value project`}
 
 declare -a apis=(
+    "aiplatform.googleapis.com"
     "compute.googleapis.com"
     "orgpolicy.googleapis.com"
     "pubsub.googleapis.com"
