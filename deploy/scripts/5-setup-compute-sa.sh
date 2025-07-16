@@ -4,38 +4,38 @@
 # This script will create a service account for the Media Search system
 
 # Inputs and defaults
-SA_ID=${1:-"media-search-sa"}
-PROJECT=${2:-$(gcloud config get project)}
+PROJECT=${1:-$(gcloud config get project)}
 
-SA_EMAIL="$SA_ID@$PROJECT.iam.gserviceaccount.com"
+PROJECT_NUM=$(gcloud projects describe $PROJECT --format="value(projectNumber)")
+SA_EMAIL="$PROJECT_NUM-compute@developer.gserviceaccount.com"
 
-echo $SA_EMAIL
-
-echo "Assigning roles to $SA_EMAIL on project $PROJECT"
+# --- 1. Assign roles to the Compute service account ---
+echo "Assigning roles to Vertext AI Service Agent on project $PROJECT"
 
 # Array of roles to be assigned
 ROLES=(
   "roles/bigquery.admin"
+  "roles/pubsub.admin"
+  "roles/storage.admin"
+  "roles/storage.objectAdmin"
   "roles/telemetry.metricsWriter"
   "roles/cloudtrace.admin"
   "roles/cloudtrace.agent"
   "roles/cloudtrace.user"
   "roles/monitoring.metricWriter"
   "roles/monitoring.metricsScopesAdmin"
-  "roles/pubsub.admin"
-  "roles/storage.admin"
-  "roles/storage.objectAdmin"
-  "roles/viewer"
 )
 
 # Loop through the roles and assign them to the service account
 for ROLE in "${ROLES[@]}"
 do
-  echo "Assigning $ROLE..."
+  echo "Granting $ROLE..."
   gcloud projects add-iam-policy-binding "$PROJECT" \
-    --member="serviceAccount:$SA_EMAIL" \
+    --member=serviceAccount:$SA_EMAIL \
     --role="$ROLE" \
     --condition=None > /dev/null
 done
 
-echo "All roles have been assigned successfully."
+echo "✅ Vertex AI Service Agent roles granted."
+
+
