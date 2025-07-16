@@ -10,23 +10,8 @@ PROJECT=${2:-$(gcloud config get project)}
 SA_EMAIL="$SA_ID@$PROJECT.iam.gserviceaccount.com"
 
 echo $SA_EMAIL
-exit
 
-# Check if a service account email is provided
-if [ -z "$1" ]; then
-  echo "Usage: $0 <service_account_email>"
-  exit 1
-fi
-
-SERVICE_ACCOUNT=$1
-PROJECT_ID=$(gcloud config get-value project)
-
-if [ -z "$PROJECT_ID" ]; then
-  echo "GCP project not set. Please run 'gcloud config set project <your-project-id>'"
-  exit 1
-fi
-
-echo "Assigning roles to $SERVICE_ACCOUNT on project $PROJECT_ID"
+echo "Assigning roles to $SA_EMAIL on project $PROJECT"
 
 # Array of roles to be assigned
 ROLES=(
@@ -47,8 +32,8 @@ ROLES=(
 for ROLE in "${ROLES[@]}"
 do
   echo "Assigning $ROLE..."
-  gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-    --member="serviceAccount:$SERVICE_ACCOUNT" \
+  gcloud projects add-iam-policy-binding "$PROJECT" \
+    --member="serviceAccount:$SA_EMAIL" \
     --role="$ROLE" \
     --condition=None > /dev/null
 done
