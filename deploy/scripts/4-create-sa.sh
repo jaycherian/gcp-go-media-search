@@ -19,11 +19,11 @@ echo "- Email: $NEW_SA_EMAIL"
 # --- 3. Create the Vertex AI service account if it doesn't exist ---
 echo "Creating Vertex AI service account if it doesn't exist..."
 gcloud beta services identity create --service=aiplatform.googleapis.com 
-
-echo "Assigning the Vertex AI Service Agent role"
 gcloud projects add-iam-policy-binding $PROJECT \
     --member=serviceAccount:service-$PROJECT_NUM@gcp-sa-aiplatform.iam.gserviceaccount.com \
     --role=roles/aiplatform.serviceAgent \
-    --condition=None
+    --condition=None > /dev/null
+
+echo "✅ Vertex AI Service Agent created."
 
 
