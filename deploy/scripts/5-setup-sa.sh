@@ -1,5 +1,16 @@
 #!/bin/bash
-# 4-sa-perms.sh
+# 5-setup-sa.sh
+
+# This script will create a service account for the Media Search system
+
+# Inputs and defaults
+SA_ID=${1:-"media-search-sa"}
+PROJECT=${2:-$(gcloud config get project)}
+
+SA_EMAIL="$SA_ID@$PROJECT.iam.gserviceaccount.com"
+
+echo $SA_EMAIL
+exit
 
 # Check if a service account email is provided
 if [ -z "$1" ]; then

@@ -1,10 +1,7 @@
 #!/bin/bash
-# Enable all the most common APIs that will be needed
-#
-# USAGE: argolis-enable-apis.sh [PROJECT_ID]
-# if no project is given, the current gcloud project is used
+# 1-user-perms.sh
  
-project=${1:-`gcloud config get-value project`}
+PROJECT=${1:-`gcloud config get-value project`}
 
 declare -a apis=(
     "compute.googleapis.com"
@@ -22,7 +19,7 @@ do
     #(gtime -f "%e" gcloud services enable $api --project $project) 2>&1 | xargs printf "Finished in %.0fs\n"
 
     # just run the command without timing as the above is not cross platform compatible
-    gcloud services enable $api --project $project
+    gcloud services enable $api --project $PROJECT
 
 done
 

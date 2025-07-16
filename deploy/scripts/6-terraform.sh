@@ -1,5 +1,5 @@
 #!/bin/bash
-# 5-terraform.sh
+# 6-terraform.sh
 
 # This script will create the tfvars file with inputs given by the user and then run terraform.
 

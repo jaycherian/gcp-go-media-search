@@ -1,5 +1,5 @@
 #!/bin/bash
-# 6-create-sa.sh
+# 4-create-sa.sh
 
 # This script will create a service account for the Media Search system
 
