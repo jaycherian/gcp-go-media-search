@@ -247,7 +247,7 @@ if [[ "$EXECUTE_CHOICE" == "y" || "$EXECUTE_CHOICE" == "Y" ]]; then
                     --priority=1000 \
                     --network="$VPC_NETWORK" \
                     --action=ALLOW \
-                    --rules=tcp:22,tcp:80,tcp:443,tcp:3389,tcp:4000,icmp \
+                    --rules=tcp:22,tcp:80,tcp:443,tcp:3389,tcp:4000,tcp:5173,icmp \
                     --source-ranges=0.0.0.0/0 \
                     --target-tags="$FW_TAG_NAME" || echo "⚠️  Could not create firewall rule. Please check permissions."
             else
