@@ -9,10 +9,7 @@ SA_NAME=${2:-"Media Search service account"}
 PROJECT=${3:-$(gcloud config get project)}
 
 # --- 2. Create the service account ---
-if [[ -z "$SA_NAME" ]]; then
-    SA_NAME=$1
-fi
-NEW_SA_EMAIL=$(gcloud iam service-accounts create "$SA_NAME" --display-name="$SA_NAME" --format json | jq -r .email)
+NEW_SA_EMAIL=$(gcloud iam service-accounts create "$SA_ID" --display-name="$SA_NAME" --format json | jq -r .email)
 echo "✅ Service account created: "
 echo "- Id: $SA_ID"
 echo "- Email: $NEW_SA_EMAIL"
