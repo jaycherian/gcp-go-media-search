@@ -53,7 +53,7 @@ for ROLE in "${ROLES[@]}"
 do
   echo "Granting $ROLE..."
   gcloud projects add-iam-policy-binding "$PROJECT" \
-    --member=serviceAccount:$SA_EMAIL \
+    --member=serviceAccount:$VERTEX_SA_EMAIL \
     --role="$ROLE" \
     --condition=None > /dev/null
 done
