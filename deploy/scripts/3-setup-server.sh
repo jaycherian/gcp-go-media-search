@@ -197,21 +197,27 @@ install_go_env() {
     fi
 }
 
-# --- Terraform ---
-install_terraform() {
-    print_header "Terraform Setup"
+install_ffmpeg() {
+    print_header "FFmpeg Setup"
+
+    # Check for snap
     if ! command_exists snap; then
-        print_error "Snap is not installed. Cannot install Terraform."
+        print_error "Snap is not installed. Cannot install Go or Terraform."
+        print_info "Please install snapd first. On Debian/Ubuntu: sudo apt update && sudo apt install snapd"
         return 1
     fi
 
-    if ! command_exists terraform; then
-        run_and_check "Installing Terraform via snap" sudo snap install terraform --classic
+    # Install Go
+    if ! command_exists ffmpeg; then
+        print_info "Installing FFmpeg.."
+        if ! run_and_check "Installing FFmpeg via snap" sudo snap install ffmpeg --classic; then
+            print_error "FFmpeg installation failed."
+            return 1
+        fi
     else
-        print_success "Terraform is already installed."
+        print_success "FFmpeg is already installed."
     fi
 }
-
 
 # --- Main Script Logic ---
 main() {
@@ -225,7 +231,7 @@ main() {
     
     install_node_env
     install_go_env
-    install_terraform
+    install_ffmpeg
 
     print_header "Setup Complete!"
     print_info "Please restart your terminal or run 'source $(detect_profile)' for all changes to take effect."
