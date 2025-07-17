@@ -21,22 +21,14 @@ This project provides a complete solution for processing video files, extracting
 
 The project is composed of three main parts:
 
-1.  **Go Backend API (`/cmd/server`)**: A Go server built with Gin that exposes a REST API for file uploads and media search. It listens to Cloud Storage events via Pub/Sub to trigger media processing workflows.
-2.  **React Frontend (`/web/ui`)**: A React and Material-UI single-page application for interacting with the backend, searching for media, and viewing results.
-3.  **GCP Infrastructure (`/deployments/terraform`)**: Terraform scripts to provision all necessary GCP resources, including GCS buckets, Pub/Sub topics, and BigQuery datasets.
+1.  **Go Backend API (`/backend/go/server`)**: A Go server built with Gin that exposes a REST API for file uploads and media search. It listens to Cloud Storage events via Pub/Sub to trigger media processing workflows.
+1.  **React Frontend (`/frontend/web/ui`)**: A React and Material-UI single-page application for interacting with the backend, searching for media, and viewing results.
+1.  **GCP Infrastructure (`/deploy/terraform`)**: Terraform scripts to provision all necessary GCP resources, including GCS buckets, Pub/Sub topics, and BigQuery datasets.
+1.  **GCP Infrastructure (`/deploy/scripts`)**: Bash scripts to provision all necessary GCP compute and network infrastructure
 
 The core processing logic uses a **Chain of Responsibility (COR)** pattern, where each step (resizing, summary generation, scene extraction) is an atomic, testable unit of work.
 
-## Prerequisites
-
-Before you begin, ensure you have:
-
-- x
-- x
-- x
-- x
-
 ## Getting Started
 
-### 1. Configure Your Environment
+**Follow the [installation instructions](./install.md) to setup your environment**
 
