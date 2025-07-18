@@ -25,7 +25,6 @@ terraform {
 data "google_storage_project_service_account" "gcs_account" {
 }
 
-# trunk-ignore(checkov/CKV_GCP_83)
 resource "google_pubsub_topic" "media_low_res_events" {
   name = "media_low_res_events"
   message_storage_policy {
@@ -33,7 +32,6 @@ resource "google_pubsub_topic" "media_low_res_events" {
   }
 }
 
-# trunk-ignore(checkov/CKV_GCP_83)
 resource "google_pubsub_topic" "media_low_res_events_dead_letter" {
   name = "media_low_res_events_dead_letter"
   message_storage_policy {

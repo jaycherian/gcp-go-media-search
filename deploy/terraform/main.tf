@@ -12,11 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-module "iam" {
-  source = "./modules/iam"
-  app_service_account =  var.app_service_account
-}
-
 # module "low_res_resources" {
 #   source = "./modules/low_res"
 #   region = var.region
