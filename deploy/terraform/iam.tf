@@ -30,7 +30,7 @@ resource "google_service_account" "media-search-sa" {
 # Add roles to the created Media Search service account
 module "member_roles_media_search" {
   source                  = "terraform-google-modules/iam/google//modules/member_iam"
-  service_account_address = google_service_account.media-search-sa
+  service_account_address = google_service_account.media-search-sa.email
   prefix                  = "serviceAccount"
   project_id              = local.project.id
   project_roles = [
