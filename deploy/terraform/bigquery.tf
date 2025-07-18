@@ -12,19 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-terraform {
-  required_version = ">= 0.12"
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 6.5.0"
-    }
-  }
-}
-
 # TODO for production we may want to add customer managed encryption
 
-# trunk-ignore(checkov/CKV_GCP_81)
 resource "google_bigquery_dataset" "media_ds" {
   dataset_id                  = "media_ds"
   description                 = "Media data source for media file object"
@@ -36,7 +25,6 @@ resource "google_bigquery_dataset" "media_ds" {
   }
 }
 
-# trunk-ignore(checkov/CKV_GCP_80)
 resource "google_bigquery_table" "media_ds_scene_embeddings" {
   dataset_id = google_bigquery_dataset.media_ds.dataset_id
   table_id   = "scene_embeddings"
@@ -67,7 +55,6 @@ resource "google_bigquery_table" "media_ds_scene_embeddings" {
 EOF
 }
 
-# trunk-ignore(checkov/CKV_GCP_80)
 resource "google_bigquery_table" "media_ds_media" {
   dataset_id = google_bigquery_dataset.media_ds.dataset_id
   table_id   = "media"

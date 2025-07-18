@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ## create high res bucket and pubsub
-module "storage" {
+module "high_res_storage" {
   source = "./modules/storage"
   type = "high_res"
   bucket_name = var.high_res_bucket
@@ -21,7 +21,7 @@ module "storage" {
 }
 
 ## create low res bucket and pubsub
-module "storage" {
+module "low_res_storage" {
   source = "./modules/storage"
   type = "low_res"
   bucket_name = var.low_res_bucket
