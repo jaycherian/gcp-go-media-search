@@ -11,7 +11,6 @@ echo "Enabling APIs..."
 declare -a apis=(
     "aiplatform.googleapis.com"
     "compute.googleapis.com"
-    "orgpolicy.googleapis.com"
     "pubsub.googleapis.com"
 )
 
