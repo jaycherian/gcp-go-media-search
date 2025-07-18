@@ -71,3 +71,5 @@ module "member_roles_default_compute" {
   ]
 
   depends_on = [google_project_service_identity.service_identity]
+
+}
