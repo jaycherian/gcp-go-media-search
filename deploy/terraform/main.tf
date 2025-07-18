@@ -12,21 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-terraform {
-  required_version = ">= 0.12"
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 6.5.0"
-    }
-  }
-}
-
-provider "google" {
-  project = var.project_id
-  region = var.region
-}
-
 module "iam" {
   source = "./modules/iam"
   app_service_account =  var.app_service_account

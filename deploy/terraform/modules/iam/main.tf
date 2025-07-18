@@ -11,15 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-terraform {
-  required_version = ">= 0.12"
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 6.5.0"
-    }
-  }
-}
 
 ###############################
 ##### 1) SERVICE ACCOUNTS #####
@@ -33,7 +24,7 @@ resource "google_service_account" "media-search-sa" {
 }
 
 ##########################################################
-###### 3.a) MEMBER ROLES - Created Service Accounts ######
+###### 2.a) MEMBER ROLES - Created Service Accounts ######
 ##########################################################
 
 # Add roles to the created Media Search service account
@@ -57,7 +48,7 @@ module "member_roles_media_search" {
 }
 
 ##########################################################
-###### 3.b) MEMBER ROLES - Default Service Accounts ######
+###### 2.b) MEMBER ROLES - Default Service Accounts ######
 ##########################################################
 
 # Add roles to the default Compute service account
@@ -80,4 +71,3 @@ module "member_roles_default_compute" {
   ]
 
   depends_on = [google_project_service_identity.service_identity]
-}
