@@ -5,6 +5,9 @@
 *.tfstate
 *.tfstate.*
 
+# aspect folder
+.aspect
+
 # Crash log files
 crash.log
 crash.*.log

@@ -1,6 +1,0 @@
-# @generated
-# Input hashes for repository rule npm_translate_lock(name = "npm", pnpm_lock = "@@//web/apps/media-search:pnpm-lock.yaml").
-# This file should be checked into version control along with the pnpm-lock.yaml file.
-web/apps/media-search/.npmrc=494917092
-web/apps/media-search/package.json=-936465213
-web/apps/media-search/pnpm-lock.yaml=-1697983013
