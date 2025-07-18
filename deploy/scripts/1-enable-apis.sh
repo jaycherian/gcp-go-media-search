@@ -12,6 +12,7 @@ declare -a apis=(
     "aiplatform.googleapis.com"
     "compute.googleapis.com"
     "pubsub.googleapis.com"
+    "storage.googleapis.com"
 )
 
 for api in "${apis[@]}"
