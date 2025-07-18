@@ -12,30 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-variable "project_id" {
-  type = string
-  default = ""
-}
-
-variable "region" {
-    type = string
-    default = "us-central1"
-}
-
-variable "media_low_res_schema_name" {
-    type = string
-    default = "media_low_res_schema"
-}
-
-variable "low_res_bucket" {
-    type = string
-}
-
-variable "high_res_bucket" {
-    type = string
-}
-
 variable "app_service_account" {
     type = string
-    default = "media-search-sa"
+    description = "The name of the service account to be used by the application"
 }

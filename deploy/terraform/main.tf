@@ -27,21 +27,26 @@ provider "google" {
   region = var.region
 }
 
-module "low_res_resources" {
-  source = "./modules/low_res"
-  region = var.region
-  low_res_bucket = var.low_res_bucket
+module "iam" {
+  source = "./modules/iam"
+  app_service_account =  var.app_service_account
 }
 
-module "high_res_resources" {
-  source = "./modules/high_res"
-  region = var.region
-  high_res_bucket = var.high_res_bucket
-}
+# module "low_res_resources" {
+#   source = "./modules/low_res"
+#   region = var.region
+#   low_res_bucket = var.low_res_bucket
+# }
 
-module "bigquery" {
-  source = "./modules/bigquery"
-  region = var.region
-}
+# module "high_res_resources" {
+#   source = "./modules/high_res"
+#   region = var.region
+#   high_res_bucket = var.high_res_bucket
+# }
+
+# module "bigquery" {
+#   source = "./modules/bigquery"
+#   region = var.region
+# }
 
 
