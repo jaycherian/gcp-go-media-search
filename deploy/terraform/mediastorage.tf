@@ -17,7 +17,7 @@ module "high_res_storage" {
   source = "./modules/storage"
   type = "high_res"
   bucket_name = var.high_res_bucket
-  region = var.region
+  region = local.location.region
 }
 
 ## create low res bucket and pubsub
@@ -25,5 +25,5 @@ module "low_res_storage" {
   source = "./modules/storage"
   type = "low_res"
   bucket_name = var.low_res_bucket
-  region = var.region
+  region = local.location.region
 }

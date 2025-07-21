@@ -22,6 +22,15 @@ variable "region" {
     default = "us-central1"
 }
 
+variable "zone" {
+    type = string
+    default = "us-central1-b"
+}
+
+variable "vpc_name" {
+    type = string
+}
+
 variable "media_low_res_schema_name" {
     type = string
     default = "media_low_res_schema"

@@ -4,6 +4,6 @@ output "project_id" {
 }
 
 output "region" {
-  description = "main region"
+  description = "Main region"
   value       = var.region
 }
