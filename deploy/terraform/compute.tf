@@ -22,26 +22,22 @@ resource "google_compute_instance" "server_vm" {
   boot_disk {
     auto_delete = true
     device_name = google_compute_instance.server_vm.name
-
+    mode = "READ_WRITE"
     initialize_params {
       image = "projects/debian-cloud/global/images/debian-12-bookworm-v20250709"
       size  = 100
       type  = "pd-ssd"
     }
-
-    mode = "READ_WRITE"
   }
 
   network_interface {
-    access_config {
-      network_tier = "PREMIUM"
-    }
-
     nic_type    = "GVNIC"
     queue_count = 0
     stack_type  = "IPV4_ONLY"
-    # GF: TODO: this needs to be genericized
-    subnetwork  = "projects/media-search-demo-4/regions/us-central1/subnetworks/default"
+    subnetwork  = local.subnet_self_link
+    access_config {
+      network_tier = "PREMIUM"
+    }
   }
 
   # Defines the service account and its API access scopes for the instance.
@@ -68,5 +64,4 @@ resource "google_compute_instance" "server_vm" {
     preemptible         = false
     provisioning_model  = "STANDARD"
   }
-
 }

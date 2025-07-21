@@ -18,9 +18,6 @@ locals {
     name    = data.google_project.project.name
     number  = data.google_project.project.number
   }
-  vpc = {
-    name    = var.vpc_name
-  }
   location = {
     region = var.region
     zone = var.zone
@@ -65,4 +62,3 @@ resource "time_sleep" "wait_for_service_agent_readiness" {
   # SLO for IAM provisioning of Service Agents is 7min.
   create_duration = "420s"
 }
-

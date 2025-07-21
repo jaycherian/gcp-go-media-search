@@ -14,7 +14,6 @@
 
 variable "project_id" {
   type = string
-  default = ""
 }
 
 variable "region" {
@@ -29,6 +28,12 @@ variable "zone" {
 
 variable "vpc_name" {
     type = string
+    description = "The name of the VPC network to use. If not provided, a new one will be created."
+}
+
+variable "subnet_name" {
+    type = string
+    description = "The name of the subnetwork to use. Required if vpc_name is provided."
 }
 
 variable "media_low_res_schema_name" {
