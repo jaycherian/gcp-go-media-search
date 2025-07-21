@@ -12,28 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-# module "low_res_resources" {
-#   source = "./modules/low_res"
-#   region = var.region
-#   low_res_bucket = var.low_res_bucket
-# }
-
-# module "high_res_resources" {
-#   source = "./modules/high_res"
-#   region = var.region
-#   high_res_bucket = var.high_res_bucket
-# }
-
-# module "bigquery" {
-#   source = "./modules/bigquery"
-#   region = var.region
-# }
-
 locals {
   project = {
     id      = var.project_id
     name    = data.google_project.project.name
     number  = data.google_project.project.number
+  }
+  vpc = {
+    name    = var.vpc_name
+  }
+  location = {
+    region = var.region
+    zone = var.zone
   }
   _services = [
     "aiplatform",
