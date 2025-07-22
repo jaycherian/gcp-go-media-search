@@ -21,7 +21,7 @@ resource "google_compute_instance" "server_vm" {
   # Defines the boot disk for the instance.
   boot_disk {
     auto_delete = true
-    device_name = google_compute_instance.server_vm.name
+    device_name = "media-search-server-disk"
     mode = "READ_WRITE"
     initialize_params {
       image = "projects/debian-cloud/global/images/debian-12-bookworm-v20250709"
