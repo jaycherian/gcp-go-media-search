@@ -53,3 +53,9 @@ variable "app_service_account" {
     type = string
     default = "media-search-sa"
 }
+
+variable "release" {
+  type        = string
+  description = "The release tag for the setup scripts."
+  default     = "release-0.0.4"
+}
