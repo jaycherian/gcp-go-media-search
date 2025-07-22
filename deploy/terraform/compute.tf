@@ -24,7 +24,7 @@ resource "google_compute_instance" "server_vm" {
     device_name = "media-search-server-disk"
     mode = "READ_WRITE"
     initialize_params {
-      image = "projects/ubuntu-os-cloud/global/images/family/ubuntu-2404-lts"
+      image = "ubuntu-os-cloud/ubuntu-2404-lts"
       size  = 100
       type  = "pd-ssd"
     }
