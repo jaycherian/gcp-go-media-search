@@ -1,21 +1,15 @@
 #!/bin/bash
-# 3-setup-server.sh
+# setup-server.sh
 # ==============================================================================
-#  Interactive Development Environment Setup Script
+#  Development Environment Setup Script
+#
+#  NOTE: DO NOT run this script directly, it will be automatically run by the 
+#        server VM the first time it starts.
 #
 #  This script installs and configures a development environment with:
 #  - NVM, Node.js, PNPM, Bazel
 #  - Go and related build/debugging tools
-#  - Terraform
-#
-#  It's designed to be idempotent, meaning it can be run multiple times
-#  without causing issues. It checks for existing installations and provides
-#  clear feedback.
-#
-#  How to use:
-#  1. Save this script as a file (e.g., `setup_dev_env.sh`).
-#  2. Make it executable: `chmod +x setup_dev_env.sh`
-#  3. Run it: `./setup_dev_env.sh`
+#  - FFmpeg
 # ==============================================================================
 
 # --- Helper Functions for UI and Checks ---
@@ -153,7 +147,7 @@ install_go_env() {
 
     # Check for snap
     if ! command_exists snap; then
-        print_error "Snap is not installed. Cannot install Go or Terraform."
+        print_error "Snap is not installed. Cannot install Go or FFmpeg."
         print_info "Please install snapd first. On Debian/Ubuntu: sudo apt update && sudo apt install snapd"
         return 1
     fi
@@ -202,12 +196,12 @@ install_ffmpeg() {
 
     # Check for snap
     if ! command_exists snap; then
-        print_error "Snap is not installed. Cannot install Go or Terraform."
+        print_error "Snap is not installed. Cannot install Go or FFmpeg."
         print_info "Please install snapd first. On Debian/Ubuntu: sudo apt update && sudo apt install snapd"
         return 1
     fi
 
-    # Install Go
+    # Install ffmpeg
     if ! command_exists ffmpeg; then
         print_info "Installing FFmpeg.."
         if ! run_and_check "Installing FFmpeg via snap" sudo snap install ffmpeg --classic; then
@@ -222,8 +216,8 @@ install_ffmpeg() {
 # --- Main Script Logic ---
 main() {
     # Check for sudo permissions if needed for snap
-    if ! command_exists sudo && ( ! command_exists go || ! command_exists terraform ); then
-        print_error "sudo is not available, but is required to install Go and Terraform via snap."
+    if ! command_exists sudo && ( ! command_exists go || ! command_exists ffmpeg ); then
+        print_error "sudo is not available, but is required to install Go and ffmpeg via snap."
         exit 1
     fi
     
