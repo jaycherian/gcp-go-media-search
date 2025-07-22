@@ -12,6 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+# Data source to get the latest Ubuntu 24.04 LTS image.
+# This ensures we always use the most up-to-date image from the family
+# without hardcoding a specific version.
+data "google_compute_image" "latest_ubuntu_2404" {
+  project = "ubuntu-os-cloud"
+  family  = "ubuntu-2404-lts"
+}
+
 # This is the server VM that hosts the application
 resource "google_compute_instance" "server_vm" {
   name         = "media-search-server"
@@ -24,7 +32,7 @@ resource "google_compute_instance" "server_vm" {
     device_name = "media-search-server-disk"
     mode = "READ_WRITE"
     initialize_params {
-      image = "ubuntu-os-cloud/ubuntu-2404-lts"
+      image = data.google_compute_image.latest_ubuntu_2404.self_link
       size  = 100
       type  = "pd-ssd"
     }
