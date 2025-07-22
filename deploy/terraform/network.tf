@@ -20,7 +20,7 @@ locals {
 }
 
 # Create a new VPC network in auto mode ONLY if a vpc_name is not provided.
-resource "google_compute_network" "new_vpc" {
+resource "google_compute_network" "default" {
   count                   = var.vpc_name == "" ? 1 : 0
   project                 = local.project.id
   name                    = "media-search-vpc-auto"
@@ -33,9 +33,9 @@ resource "google_compute_network" "new_vpc" {
 data "google_compute_subnetwork" "created" {
   count      = var.vpc_name == "" ? 1 : 0
   project    = local.project.id
-  name       = google_compute_network.new_vpc[0].name # In auto-mode, subnet name matches network name
+  name       = google_compute_network.default[0].name # In auto-mode, subnet name matches network name
   region     = var.region
-  depends_on = [google_compute_network.new_vpc]
+  depends_on = [google_compute_network.default]
 }
 
 # Data source to get information about a pre-existing subnet.
@@ -45,4 +45,23 @@ data "google_compute_subnetwork" "existing" {
   project = local.project.id
   name    = var.subnet_name
   region  = local.location.region
+}
+
+# Set up the firewall correctly
+resource "google_compute_firewall" "firewall" {
+  name    = "allow-common"
+  network = google_compute_network.default.name
+
+  allow {
+    protocol = "icmp"
+  }
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22", "80", "443", "3389", "5173"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+
+  depends_on = [google_compute_network.default]
 }
