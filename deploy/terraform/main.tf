@@ -24,7 +24,6 @@ locals {
   }
   _services = [
     "aiplatform",
-    "cloudresourcemanager",
     "compute",
     "iam",
     "pubsub",
