@@ -17,7 +17,7 @@
 # without hardcoding a specific version.
 data "google_compute_image" "latest_ubuntu_2404" {
   project = "ubuntu-os-cloud"
-  family  = "ubuntu-2404-noble-amd64-v20250709"
+  family  = "ubuntu-2404-lts-amd64"
 }
 
 # This is the server VM that hosts the application
