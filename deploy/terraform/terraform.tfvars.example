@@ -1,8 +1,11 @@
 # Specify the project to create infrastructure.
 project_id = ""
 
-# Specify the VPC to use, if blank one will be created for your
+# Specify the VPC to use, if blank one will be created for you
 vpc_name = ""
+
+# Specify the subnet to use, if blank one will be created for you
+subnet_name = ""
 
 # Defining the bucket names for high resolution media. Please define a unique name as this bucket will be created in your project
 high_res_bucket = ""
