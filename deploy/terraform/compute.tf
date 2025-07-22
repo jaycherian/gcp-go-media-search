@@ -43,7 +43,7 @@ resource "google_compute_instance" "server_vm" {
   # Defines the service account and its API access scopes for the instance.
   service_account {
     email = local.service_accounts_default.compute
-    scopes = ["cloud_platform"]
+    scopes = ["cloud-platform"]
   }
 
   # Enables Shielded VM features to meet security constraints.
