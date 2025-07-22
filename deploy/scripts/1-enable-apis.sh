@@ -10,6 +10,7 @@ echo "Enabling APIs..."
 
 declare -a apis=(
     "aiplatform.googleapis.com"
+    "cloudresourcemanager.googleapis.com"
     "compute.googleapis.com"
     "iam.googleapis.com"
     "pubsub.googleapis.com"
