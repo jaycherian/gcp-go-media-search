@@ -19,7 +19,6 @@ package workflow
 
 import (
 	"text/template"
-	"time"
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/storage"
@@ -47,6 +46,7 @@ type MediaReaderWorkflow struct {
 	summaryTemplate *template.Template
 	sceneTemplate   *template.Template
 	chain           cor.Chain // The underlying chain of commands to be executed.
+	ffprobeCommand  string
 }
 
 // Execute runs the entire media reader workflow by invoking the underlying chain.
@@ -69,6 +69,7 @@ func (m *MediaReaderWorkflow) initializeChain() {
 	const SummaryOutputParamName = "__summary_output__"
 	const SceneOutputParamName = "__scene_output__"
 	const MediaOutputParamName = "__media_output__"
+	const MediaLengthOutputParamName = "__media_length_output__"
 
 	// Create the chain that will hold all the command steps.
 	out := cor.NewBaseChain(m.GetName())
@@ -77,18 +78,8 @@ func (m *MediaReaderWorkflow) initializeChain() {
 	// and extract a structured GCS object reference from it.
 	out.AddCommand(commands.NewMediaTriggerToGCSObject("media-trigger-to-gcs-object"))
 
-	// Step 2: Download the media file from the GCS bucket specified in the trigger
-	// message and save it to a temporary local file on the server's disk.
-	// Muziris change: With the new libraries it is no longer necessary to have a temp file locally and upload it.
-	// We can analyze and extract scenes right from the file in GCS bucket
-	out.AddCommand(commands.NewGCSToTempFile("gcs-to-temp-file", m.storageClient, "media-summary-"))
-
-	// Step 3: Upload the temporary local file to the Vertex AI File Service.
-	// This service makes the file available for analysis by Gemini models.
-	// The operation is given a 5-minute timeout.
-	// Muziris change: With the new libraries it is no longer necessary to have a temp file locally and upload it.
-	// We can analyze and extract scenes right from the file in GCS bucket
-	out.AddCommand(commands.NewMediaUpload("media-upload", m.genaiClient, 300*time.Second))
+	// Step 2: Get media length
+	out.AddCommand(commands.NewMediaLengthCommand("get-media-length", m.ffprobeCommand, MediaLengthOutputParamName, m.config))
 
 	// Step 4: Generate a high-level summary of the media file using Gemini.
 	// This command takes the file handle from the previous step and a prompt template
@@ -103,14 +94,14 @@ func (m *MediaReaderWorkflow) initializeChain() {
 	// Step 6: Extract detailed descriptions for each scene timestamp identified in the summary.
 	// This command runs scene analysis jobs in parallel using a worker pool for efficiency.
 	// The collected scene descriptions are stored in the context with the key `SceneOutputParamName`.
-	sceneExtractor := commands.NewSceneExtractor("extract-media-scenes", m.genaiModel, m.sceneTemplate, m.numberOfWorkers)
+	sceneExtractor := commands.NewSceneExtractor("extract-media-scenes", m.genaiModel, m.sceneTemplate, m.numberOfWorkers, MediaLengthOutputParamName)
 	sceneExtractor.BaseCommand.OutputParamName = SceneOutputParamName
 	out.AddCommand(sceneExtractor)
 
 	// Step 7: Assemble the final, complete `model.Media` object. This command takes the
 	// summary struct and the list of scene descriptions and combines them into a single,
 	// unified data structure. The result is stored with the key `MediaOutputParamName`.
-	out.AddCommand(commands.NewMediaAssembly("assemble-media-scenes", SummaryOutputParamName, SceneOutputParamName, MediaOutputParamName))
+	out.AddCommand(commands.NewMediaAssembly("assemble-media-scenes", SummaryOutputParamName, SceneOutputParamName, MediaOutputParamName, MediaLengthOutputParamName))
 
 	// Step 8: Persist the final assembled media object to the main 'media' table in BigQuery.
 	// This makes the structured data available for querying but does not include the vector embeddings yet.
@@ -119,10 +110,6 @@ func (m *MediaReaderWorkflow) initializeChain() {
 		m.bigqueryClient,
 		m.config.BigQueryDataSource.DatasetName,
 		m.config.BigQueryDataSource.MediaTable, MediaOutputParamName))
-
-	// Step 9: Clean up by deleting the temporary file from the Vertex AI File Service
-	// to avoid incurring unnecessary storage costs.
-	out.AddCommand(commands.NewMediaCleanup("cleanup-file-system", m.genaiClient))
 
 	// Assign the fully constructed chain to the workflow instance.
 	m.chain = out
@@ -141,7 +128,8 @@ func (m *MediaReaderWorkflow) initializeChain() {
 func NewMediaReaderPipeline(
 	config *cloud.Config,
 	serviceClients *cloud.ServiceClients,
-	agentModelName string) *MediaReaderWorkflow {
+	agentModelName string,
+	ffprobeCommand string) *MediaReaderWorkflow {
 
 	// Parse the summary prompt template from the configuration file.
 	summaryTemplate, err := template.New("summary-template").Parse(config.PromptTemplates.SummaryPrompt)
@@ -165,6 +153,7 @@ func NewMediaReaderPipeline(
 		numberOfWorkers: config.Application.ThreadPoolSize,
 		summaryTemplate: summaryTemplate,
 		sceneTemplate:   sceneTemplate,
+		ffprobeCommand:  ffprobeCommand,
 	}
 	// Build the command chain for the new pipeline instance.
 	pipeline.initializeChain()

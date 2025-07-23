@@ -75,6 +75,7 @@ type SceneExtractor struct {
 	geminiInputTokenCounter  metric.Int64Counter                // OTel counter for input tokens.
 	geminiOutputTokenCounter metric.Int64Counter                // OTel counter for output tokens.
 	geminiRetryCounter       metric.Int64Counter                // OTel counter for retries.
+	mediaLengthParam         string
 }
 
 // NewSceneExtractor is the constructor for the SceneExtractor command.
@@ -91,7 +92,8 @@ func NewSceneExtractor(
 	name string,
 	model *cloud.QuotaAwareGenerativeAIModel,
 	prompt *template.Template,
-	numberOfWorkers int) *SceneExtractor {
+	numberOfWorkers int,
+	mediaLengthParam string) *SceneExtractor {
 	out := &SceneExtractor{
 		BaseCommand:       *cor.NewBaseCommand(name),
 		generativeAIModel: model,
@@ -102,6 +104,7 @@ func NewSceneExtractor(
 	out.geminiInputTokenCounter, _ = out.GetMeter().Int64Counter(fmt.Sprintf("%s.gemini.token.input", out.GetName()))
 	out.geminiOutputTokenCounter, _ = out.GetMeter().Int64Counter(fmt.Sprintf("%s.gemini.token.output", out.GetName()))
 	out.geminiRetryCounter, _ = out.GetMeter().Int64Counter(fmt.Sprintf("%s.gemini.retry", out.GetName()))
+	out.mediaLengthParam = mediaLengthParam
 
 	return out
 }
@@ -110,7 +113,7 @@ func NewSceneExtractor(
 func (s *SceneExtractor) IsExecutable(context cor.Context) bool {
 	return context != nil &&
 		context.Get(s.GetInputParam()) != nil &&
-		context.Get(GetVideoUploadFileParameterName()) != nil
+		context.Get(cloud.GetGCSObjectName()) != nil
 }
 
 // Execute orchestrates the parallel processing of scene extractions.
@@ -120,7 +123,13 @@ func (s *SceneExtractor) IsExecutable(context cor.Context) bool {
 func (s *SceneExtractor) Execute(context cor.Context) {
 	// Retrieve necessary data from the context.
 	summary := context.Get(s.GetInputParam()).(*model.MediaSummary)
-	videoFile := context.Get(GetVideoUploadFileParameterName()).(*genai.FileData)
+	gcsFile := context.Get(cloud.GetGCSObjectName()).(*cloud.GCSObject)
+	mediaLengthInSeconds := context.Get(s.mediaLengthParam).(int)
+	gcsFileLink := fmt.Sprintf("gs://%s/%s", gcsFile.Bucket, gcsFile.Name)
+	videoFile := &genai.FileData{
+		FileURI:  gcsFileLink,
+		MIMEType: gcsFile.MIMEType,
+	}
 
 	// --- Prepare data for the prompt template ---
 	exampleScene := model.GetExampleScene()
@@ -155,7 +164,7 @@ func (s *SceneExtractor) Execute(context cor.Context) {
 	// --- Distribute Jobs to Workers ---
 	for i, ts := range summary.SceneTimeStamps {
 		// Create a job package for each scene.
-		job := CreateJob(context.GetContext(), s.Tracer, s.geminiInputTokenCounter, s.geminiOutputTokenCounter, s.geminiRetryCounter, i, s.GetName(), summaryText, exampleText, *s.promptTemplate, videoFile, s.generativeAIModel, ts)
+		job := CreateJob(context.GetContext(), s.Tracer, s.geminiInputTokenCounter, s.geminiOutputTokenCounter, s.geminiRetryCounter, i, s.GetName(), summaryText, exampleText, *s.promptTemplate, videoFile, s.generativeAIModel, ts, mediaLengthInSeconds)
 		// Send the job into the jobs channel. One of the available workers will pick it up.
 		jobs <- job
 	}
@@ -233,6 +242,7 @@ func CreateJob(
 	videoFile *genai.FileData,
 	model *cloud.QuotaAwareGenerativeAIModel,
 	timeSpan *model.TimeSpan,
+	videoLength int,
 ) *SceneJob {
 	// Start a new OTel span for this specific scene processing task.
 	sceneCtx, sceneSpan := tracer.Start(ctx, fmt.Sprintf("%s_genai_scene_%d", commandName, workerId))
@@ -270,11 +280,8 @@ func CreateJob(
 	// Prepare the parts for the multi-modal request to Gemini.
 	contents := []*genai.Content{
 		{Parts: []*genai.Part{
-			{Text: tsPrompt},
-			{FileData: &genai.FileData{
-				FileURI:  videoFile.FileURI,
-				MIMEType: videoFile.MIMEType,
-			}},
+			genai.NewPartFromText(tsPrompt),
+			genai.NewPartFromURI(videoFile.FileURI, videoFile.MIMEType),
 		},
 			Role: "user"},
 	}
