@@ -50,7 +50,7 @@ echo "--- Starting application servers... ---"
 export HOME="/root"
 export NVM_DIR="/root/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-export PATH="${PATH}:/root/go/bin"
+export PATH="$PATH:/root/go/bin"
 
 # Run the start script in the background. The script itself will daemonize
 # the backend and frontend processes.
