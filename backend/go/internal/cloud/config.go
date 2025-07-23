@@ -103,6 +103,7 @@ type TopicSubscription struct {
 type Storage struct {
 	HiResInputBucket   string `toml:"high_res_input_bucket"` // The name of the bucket for high-resolution input files.
 	LowResOutputBucket string `toml:"low_res_output_bucket"` // The name of the bucket for low-resolution output files.
+	GCSFuseMountPoint  string `toml:"gcs_fuse_mount_point"`  // The mount point for GCS FUSE.
 }
 
 // Category defines a specific type of media and allows for overriding LLM behaviors
@@ -123,7 +124,6 @@ type Config struct {
 		Name                      string `toml:"name"`                         // The name of the application.
 		GoogleProjectId           string `toml:"google_project_id"`            // The Google Cloud project ID.
 		GoogleLocation            string `toml:"location"`                     // The Google Cloud location.
-		GoogleAPIKey              string `toml:"google_api_key"`               // The Google Cloud API key.
 		ThreadPoolSize            int    `toml:"thread_pool_size"`             // The size of the worker pool for parallel processing tasks.
 		SignerServiceAccountEmail string `toml:"signer_service_account_email"` // The service account email used for signing GCS URLs.
 	} `toml:"application"`

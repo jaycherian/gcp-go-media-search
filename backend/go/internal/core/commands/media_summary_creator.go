@@ -126,14 +126,15 @@ func (t *MediaSummaryCreator) GenerateParams(_ cor.Context) map[string]interface
 //   - context: The shared `cor.Context` for this workflow execution.
 func (t *MediaSummaryCreator) Execute(context cor.Context) {
 	// Retrieve the `genai.File` object (the handle to the media file in the File Service) from the context.
-	mediaFile := context.Get(t.GetInputParam()).(*genai.FileData)
+	gcsFile := context.Get(cloud.GetGCSObjectName()).(*cloud.GCSObject)
+	gcsFileLink := fmt.Sprintf("gs://%s/%s", gcsFile.Bucket, gcsFile.Name)
 
 	// Use a buffer to execute the Go template, substituting the dynamic params.
 	var buffer bytes.Buffer
 	err := t.template.Execute(&buffer, t.GenerateParams(context))
 	if err != nil {
 		t.GetErrorCounter().Add(context.GetContext(), 1)
-		context.AddError(t.GetName(), fmt.Errorf("failed to execute prompt template: %w", err))
+		context.AddError(t.GetName(), err)
 		return
 	}
 
@@ -149,11 +150,8 @@ func (t *MediaSummaryCreator) Execute(context cor.Context) {
 	// Prepare the parts for the multi-modal request to Gemini.
 	contents := []*genai.Content{
 		{Parts: []*genai.Part{
-			{Text: buffer.String()},
-			{FileData: &genai.FileData{
-				FileURI:  mediaFile.FileURI,
-				MIMEType: mediaFile.MIMEType,
-			}},
+			genai.NewPartFromText(buffer.String()),
+			genai.NewPartFromURI(gcsFileLink, gcsFile.MIMEType),
 		},
 			Role: "user"},
 	}
@@ -162,10 +160,9 @@ func (t *MediaSummaryCreator) Execute(context cor.Context) {
 	// encapsulates retry logic and telemetry updates.
 	// Muziris Change
 	out, err := cloud.GenerateMultiModalResponse(context.GetContext(), t.geminiInputTokenCounter, t.geminiOutputTokenCounter, t.geminiRetryCounter, 0, t.generativeAIModel, contents)
-	fmt.Print("\nThe output of the GnerateMultiModalResponse function is:", out)
 	if err != nil {
 		t.GetErrorCounter().Add(context.GetContext(), 1)
-		context.AddError(t.GetName(), fmt.Errorf("gemini request failed: %w", err))
+		context.AddError(t.GetName(), err)
 		return
 	}
 

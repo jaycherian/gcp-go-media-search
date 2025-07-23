@@ -53,7 +53,7 @@ func SetupListeners(config *cloud.Config, cloudClients *cloud.ServiceClients, ct
 
 	// Create the workflow for ingesting and analyzing low-resolution videos.
 	// This workflow uses the "creative-flash" GenAI model for analysis.
-	mediaIngestion := workflow.NewMediaReaderPipeline(config, cloudClients, "creative-flash")
+	mediaIngestion := workflow.NewMediaReaderPipeline(config, cloudClients, "creative-flash", "/snap/bin/ffprobe")
 
 	// Assign the ingestion workflow to the listener for the low-resolution topic.
 	cloudClients.PubSubListeners["LowResTopic"].SetCommand(mediaIngestion)

@@ -44,12 +44,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/h2non/filetype"
-
 	"os"
 	"os/exec"
 	"strings"
 
+	"github.com/jaycherian/gcp-go-media-search/internal/cloud"
 	"github.com/jaycherian/gcp-go-media-search/internal/core/cor"
 )
 
@@ -77,6 +76,7 @@ type FFMpegCommand struct {
 	cor.BaseCommand        // Embeds the BaseCommand for common functionality like naming and metrics.
 	commandPath     string // The path to the FFmpeg executable (e.g., "/usr/bin/ffmpeg").
 	targetWidth     string // The desired output width for the video in pixels (e.g., "240").
+	config          *cloud.Config
 }
 
 // NewFFMpegCommand is the constructor for creating a new FFMpegCommand.
@@ -88,11 +88,12 @@ type FFMpegCommand struct {
 //
 // Outputs:
 //   - *FFMpegCommand: A pointer to the newly instantiated command.
-func NewFFMpegCommand(name string, commandPath string, targetWidth string) *FFMpegCommand {
+func NewFFMpegCommand(name string, commandPath string, targetWidth string, config *cloud.Config) *FFMpegCommand {
 	return &FFMpegCommand{
 		BaseCommand: *cor.NewBaseCommand(name),
 		commandPath: commandPath,
-		targetWidth: targetWidth}
+		targetWidth: targetWidth,
+		config:      config}
 }
 
 // Execute contains the core logic for the command. It handles file operations,
@@ -101,94 +102,57 @@ func NewFFMpegCommand(name string, commandPath string, targetWidth string) *FFMp
 // Inputs:
 //   - context: The shared `cor.Context` for this workflow execution.
 func (c *FFMpegCommand) Execute(context cor.Context) {
-	// Retrieve the input file path from the context. This is expected to have been
-	// placed here by a previous command in the chain.
-	originalInputPath := context.Get(c.GetInputParam()).(string)
+	msg := context.Get(c.GetInputParam()).(*cloud.GCSObject)
+	inputFileName := fmt.Sprintf("%s/%s/%s", c.config.Storage.GCSFuseMountPoint, msg.Bucket, msg.Name)
 
-	// --- Step 1: Open the original input file ---
-	originalFile, err := os.Open(originalInputPath)
+	file, err := os.Open(inputFileName)
 	if err != nil {
 		c.GetErrorCounter().Add(context.GetContext(), 1)
-		context.AddError(c.GetName(), fmt.Errorf("failed to open original input file: %w", err))
+		context.AddError(c.GetName(), err)
 		return
 	}
-	defer originalFile.Close()
+	tempFile, _ := os.CreateTemp("", TempFilePrefix)
 
-	// --- Step 2: Detect the file type to determine the correct extension ---
-	// Read the first 261 bytes, which is enough for the `filetype` library
-	// to identify most common file formats by their magic numbers.
-	header := make([]byte, 261)
-	if _, err := originalFile.Read(header); err != nil && err != io.EOF {
-		c.GetErrorCounter().Add(context.GetContext(), 1)
-		context.AddError(c.GetName(), fmt.Errorf("failed to read header from input file: %w", err))
-		return
-	}
-	// The read moved the file pointer, so we reset it back to the beginning
-	// to ensure the full file can be copied later.
-	originalFile.Seek(0, 0)
-
-	kind, _ := filetype.Match(header)
-	if kind == filetype.Unknown {
-		// If the file type can't be determined, we log a warning but proceed.
-		// FFmpeg is often smart enough to figure it out anyway, but this is less reliable.
-		fmt.Println("Warning: Could not determine file type. FFmpeg might fail.")
-	}
-
-	// --- Step 3: Create a new temp input file WITH the correct extension ---
-	// This is a crucial workaround. Some tools, including FFmpeg, rely on file extensions.
-	// By creating a new temp file with the detected extension (e.g., ".mp4"), we increase reliability.
-	// We create it in the current directory (".") to avoid potential permission issues with /tmp,
-	// especially in restricted environments like Snap packages.
-	newInputFile, err := os.CreateTemp(".", "ffmpeg-input-*."+kind.Extension)
-	if err != nil {
-		c.GetErrorCounter().Add(context.GetContext(), 1)
-		context.AddError(c.GetName(), fmt.Errorf("failed to create new temp input file: %w", err))
-		return
-	}
-	defer newInputFile.Close()
-	defer os.Remove(newInputFile.Name()) // IMPORTANT: Schedule this temp file for cleanup when the function returns.
-
-	// Copy the original file's content to the new, correctly named temp file.
-	if _, err := io.Copy(newInputFile, originalFile); err != nil {
-		c.GetErrorCounter().Add(context.GetContext(), 1)
-		context.AddError(c.GetName(), fmt.Errorf("failed to copy content to new temp input: %w", err))
-		return
-	}
-	fmt.Printf("Created new temporary input with correct extension: %s\n", newInputFile.Name())
-
-	// --- Step 4: Create the temporary output file ---
-	// Create a placeholder file where FFmpeg will write the resized video.
-	outputFile, err := os.CreateTemp(".", "ffmpeg-output-*.mp4")
-	if err != nil {
-		c.GetErrorCounter().Add(context.GetContext(), 1)
-		context.AddError(c.GetName(), fmt.Errorf("could not create a temp output file: %w", err))
-		return
-	}
-	outputFile.Close() // Close the file handle immediately so the external FFmpeg process can write to it.
-
-	// --- Step 5: Build and run the FFmpeg command ---
-	// Populate the format string with the new temp input file, target width, and temp output file.
-	args := fmt.Sprintf(DefaultFfmpegArgs, newInputFile.Name(), c.targetWidth, outputFile.Name())
-	// Create the command object with the executable path and the formatted arguments.
+	args := fmt.Sprintf(DefaultFfmpegArgs, file.Name(), c.targetWidth, tempFile.Name())
 	cmd := exec.Command(c.commandPath, strings.Split(args, CommandSeparator)...)
+	cmd.Stderr = os.Stderr
 
-	fmt.Printf("Executing FFmpeg command: %s\n", cmd.String())
-	cmd.Stderr = os.Stderr // Pipe FFmpeg's error output to the main application's stderr for visibility.
-
-	// Run the command and wait for it to complete.
 	if err := cmd.Run(); err != nil {
-		os.Remove(outputFile.Name()) // Clean up the failed output file if the command fails.
 		c.GetErrorCounter().Add(context.GetContext(), 1)
 		context.AddError(c.GetName(), fmt.Errorf("error running ffmpeg: %w", err))
 		return
 	}
+	outputFile := fmt.Sprintf("%s/%s/%s", c.config.Storage.GCSFuseMountPoint, c.config.Storage.LowResOutputBucket, msg.Name)
 
-	// If successful, log the output path and update metrics.
-	fmt.Printf("FFmpeg processing successful. Output is at: %s\n", outputFile.Name())
+	MoveFile(tempFile.Name(), outputFile)
 	c.GetSuccessCounter().Add(context.GetContext(), 1)
-	// Add the output file to the context's list of temp files for later cleanup by the chain executor.
-	context.AddTempFile(outputFile.Name())
-	// Add the output file path as the primary output of this command, making it available
-	// as the input for the next command in the chain.
-	context.Add(cor.CtxOut, outputFile.Name())
+	context.AddTempFile(outputFile)
+	context.Add(cor.CtxOut, outputFile)
+}
+
+func MoveFile(sourcePath, destPath string) error {
+	inputFile, err := os.Open(sourcePath)
+	if err != nil {
+		return fmt.Errorf("could not open source file: %v", err)
+	}
+	defer inputFile.Close()
+
+	outputFile, err := os.Create(destPath)
+	if err != nil {
+		return fmt.Errorf("could not open dest file: %v", err)
+	}
+	defer outputFile.Close()
+
+	_, err = io.Copy(outputFile, inputFile)
+	if err != nil {
+		return fmt.Errorf("could not copy to dest from source: %v", err)
+	}
+
+	inputFile.Close()
+
+	err = os.Remove(sourcePath)
+	if err != nil {
+		return fmt.Errorf("could not remove source file: %v", err)
+	}
+	return nil
 }
