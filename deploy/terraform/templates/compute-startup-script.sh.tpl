@@ -15,7 +15,10 @@ if [ ! -f "$INIT_LOCK_FILE" ]; then
     # is atomic. The lock file will only be created upon full success.
     set -e
 
-    echo "--- First boot detected. Running full server setup. ---"
+    echo "--- First boot detected. Running full server setup... ---"
+
+    # Explicitly set HOME for the root user to ensure tools are installed in /root.
+    export HOME="/root"
 
     echo "--> Running environment setup script (Go, Node, etc.)..."
     bash -c "$(curl -fsSL https://raw.githubusercontent.com/jaycherian/gcp-go-media-search/refs/tags/${release}/deploy/scripts/setup-server.sh)"
@@ -46,8 +49,8 @@ echo "--- Starting application servers... ---"
 # This is necessary because this script runs as root in a non-interactive shell.
 export HOME="/root"
 export NVM_DIR="/root/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-export PATH=$PATH:/root/go/bin
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+export PATH="${PATH}:/root/go/bin"
 
 # Run the start script in the background. The script itself will daemonize
 # the backend and frontend processes.
