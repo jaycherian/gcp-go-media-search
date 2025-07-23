@@ -50,7 +50,7 @@ data "google_compute_subnetwork" "existing" {
 # Set up the firewall correctly
 resource "google_compute_firewall" "firewall" {
   name    = "allow-common"
-  network = google_compute_network.default[0].name
+  network = var.vpc_name == "" ? google_compute_network.default[0].name : var.vpc_name
 
   allow {
     protocol = "icmp"
