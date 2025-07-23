@@ -51,4 +51,4 @@ export PATH=$PATH:/root/go/bin
 
 # Run the start script in the background. The script itself will daemonize
 # the backend and frontend processes.
-(cd /opt/media-search && ./start_both.sh) > /var/log/media-search-app.log 2>&1 &
+(cd /opt/media-search && ./start_servers.sh) > /var/log/media-search-app.log 2>&1 &
