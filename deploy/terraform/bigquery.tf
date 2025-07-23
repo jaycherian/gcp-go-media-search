@@ -18,7 +18,7 @@ resource "google_bigquery_dataset" "media_ds" {
   dataset_id                  = "media_ds"
   description                 = "Media data source for media file object"
   location                    = "US"
-  delete_contents_on_destroy = false
+  delete_contents_on_destroy  = true
   max_time_travel_hours = 96
   labels = {
     env = "test"
@@ -28,7 +28,7 @@ resource "google_bigquery_dataset" "media_ds" {
 resource "google_bigquery_table" "media_ds_scene_embeddings" {
   dataset_id = google_bigquery_dataset.media_ds.dataset_id
   table_id   = "scene_embeddings"
-  deletion_protection = true
+  deletion_protection = false
   schema = <<EOF
 [
     {
@@ -58,7 +58,7 @@ EOF
 resource "google_bigquery_table" "media_ds_media" {
   dataset_id = google_bigquery_dataset.media_ds.dataset_id
   table_id   = "media"
-  deletion_protection = true
+  deletion_protection = false
   schema = <<EOF
 [
     {
