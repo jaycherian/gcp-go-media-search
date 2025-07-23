@@ -39,7 +39,10 @@ echo "Creating Vertex AI service agent if it doesn't exist..."
 gcloud beta services identity create --service=aiplatform.googleapis.com 
 echo "✅ Vertex AI Service Agent created."
 
-echo "Assigning roles to Vertext AI Service Agent on project $PROJECT"
+echo "Waiting 60 seconds for service agent to propagate before assigning IAM roles..."
+sleep 60
+
+echo "Assigning roles to Vertex AI Service Agent on project $PROJECT"
 
 # Array of roles to be assigned
 ROLES=(
@@ -61,5 +64,3 @@ do
 done
 
 echo "✅ Vertex AI Service Agent roles granted."
-
-
