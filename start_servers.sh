@@ -38,6 +38,11 @@ trap cleanup EXIT
 
 # --- Start Backend ---
 echo "Starting Go backend server in the background..."
+echo "Backend Server Environment:"
+echo "GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS}"
+echo "GOOGLE_GENAI_USE_VERTEXAI: ${GOOGLE_GENAI_USE_VERTEXAI}"
+echo "GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}"
+echo "GOOGLE_CLOUD_LOCATION: ${GOOGLE_CLOUD_LOCATION}"
 echo "Backend logs will be written to backend.log"
 (cd backend/go && go run ./server) > /var/log/media-search-backend.log 2>&1 &
 BACKEND_PID=$!

@@ -39,6 +39,9 @@ if [ ! -f "$INIT_LOCK_FILE" ]; then
       low_res_output_bucket = "${low_res_bucket}"
 TOML
 
+    echo "--> Creating service account key file..."
+    echo "${service_account_key}" | base64 -d > ${key_location}/media-search-sa-key.json
+
     echo "--- Initial setup completed successfully. Creating lock file. ---"
     touch "$INIT_LOCK_FILE"
 fi
@@ -51,6 +54,10 @@ export HOME="/root"
 export NVM_DIR="/root/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 export PATH="$PATH:/root/go/bin"
+export GOOGLE_APPLICATION_CREDENTIALS="${key_location}/media-search-sa-key.json"
+export GOOGLE_GENAI_USE_VERTEXAI=true
+export GOOGLE_CLOUD_PROJECT="${project_id}"
+export GOOGLE_CLOUD_LOCATION="${region}"
 
 # Run the start script in the background. The script itself will daemonize
 # the backend and frontend processes.

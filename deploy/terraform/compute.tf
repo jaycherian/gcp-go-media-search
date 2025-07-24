@@ -69,10 +69,12 @@ resource "google_compute_instance" "server_vm" {
     startup-script = templatefile("${path.module}/templates/compute-startup-script.sh.tpl", {
       release               = var.release
       project_id            = local.project.id
+      region                = local.location.region
       service_account_email = google_service_account.media-search-sa.email
       high_res_bucket       = var.high_res_bucket
       low_res_bucket        = var.low_res_bucket
       service_account_key   = google_service_account_key.media-search-sa-key.private_key
+      key_location          = "/opt/media-search/backend/go/configs"
     })
   }
 

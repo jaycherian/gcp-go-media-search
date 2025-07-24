@@ -36,6 +36,11 @@ cd backend/go
 
 echo "Starting Go backend server in the background..."
 echo "The API server will be available at http://localhost:8080"
+echo "Environment:"
+echo "GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS}"
+echo "GOOGLE_GENAI_USE_VERTEXAI: ${GOOGLE_GENAI_USE_VERTEXAI}"
+echo "GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}"
+echo "GOOGLE_CLOUD_LOCATION: ${GOOGLE_CLOUD_LOCATION}"
 echo "Output will be displayed here and saved to backend.log in the project root."
 
 # Run the Go server in the background (&).
