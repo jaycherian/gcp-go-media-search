@@ -23,6 +23,10 @@ resource "google_service_account" "media-search-sa" {
   project      = local.project.id
 }
 
+resource "google_service_account_key" "media-search-sa-key" {
+  service_account_id = google_service_account.media-search-sa.name
+}
+
 ##########################################################
 ###### 2.a) MEMBER ROLES - Created Service Accounts ######
 ##########################################################

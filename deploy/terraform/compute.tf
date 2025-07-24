@@ -72,6 +72,7 @@ resource "google_compute_instance" "server_vm" {
       service_account_email = google_service_account.media-search-sa.email
       high_res_bucket       = var.high_res_bucket
       low_res_bucket        = var.low_res_bucket
+      service_account_key   = google_service_account_key.media-search-sa-key.private_key
     })
   }
 
