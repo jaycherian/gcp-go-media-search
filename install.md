@@ -55,6 +55,7 @@ Run this command from the Cloud Shell:
 
 ```
 gcloud org-policies reset compute.vmExternalIpAccess --project $GOOGLE_CLOUD_PROJECT
+gcloud org-policies reset iam.disableServiceAccountKeyCreation --project $GOOGLE_CLOUD_PROJECT
 ```
 
 Before enabling APIs you can list out which APIs are already enabled:
