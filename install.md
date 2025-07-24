@@ -109,7 +109,7 @@ terraform apply \
   -var 'low_res_bucket=my-low-res' \
   -var 'vpc_name=myvpc' \
   -var 'subnet_name=mysub' \
-  -var 'release-latest'
+  -var 'release=release-latest'
 ```
 
 If you want to ssh to the server VM and have a look around, use this command from the Cloud Shell:
