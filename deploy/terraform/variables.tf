@@ -59,5 +59,5 @@ variable "app_service_account" {
 variable "release" {
   type        = string
   description = "The release tag for the setup scripts."
-  default     = "release-0.0.6"
+  default     = "release-latest"
 }
