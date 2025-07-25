@@ -119,7 +119,7 @@ If you want to ssh to the server VM and have a look around, use this command fro
 gcloud compute ssh media-search-server --zone us-central1-b
 ```
 
-## Media Search App Install
+## Media Search App - What Was Installed?
 
 We have created the `media-search-server` VM with a startup script that will do the following on the first start of the VM and other things on every start of the VM.
 
@@ -187,17 +187,18 @@ Server output is sent to these files:
 
 Now we’re ready to access the Media Search application in a browser.
 
-Get the external IP of the application VM with this command:
+To get the external IP of the server VM and create the URL you need to navigate to, use this command:
 
 ```
-gcloud compute instances describe media-search-server --zone=us-central1-b  --format='get(networkInterfaces[0].accessConfigs[0].natIP)'
+SERVER_IP=$(gcloud compute instances describe media-search-server --zone=us-central1-b  --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
+echo "http://${SERVER_IP}:5173"
 ```
 
-Assuming your IP is: **20.20.20.20**
+Assuming your IP is: **20.20.20.20** 
 
-Browse to this URL: <http://120.120.2.2:5173>
+You should get this URL: <http://20.20.20.20:5173>
 
-You should see this UI:
+And you should see this UI:
 
 ![Media Search UI](./images/media-search-ui.png)
 
