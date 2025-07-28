@@ -145,17 +145,10 @@ install_node_env() {
 install_go_env() {
     print_header "Go Environment Setup"
 
-    # Check for snap
-    if ! command_exists snap; then
-        print_error "Snap is not installed. Cannot install Go or FFmpeg."
-        print_info "Please install snapd first. On Debian/Ubuntu: sudo apt update && sudo apt install snapd"
-        return 1
-    fi
-
     # Install Go
     if ! command_exists go; then
         print_info "Installing Go..."
-        if ! run_and_check "Installing Go via snap" sudo snap install go --classic; then
+        if ! run_and_check "Installing Go" sudo apt install golang; then
             print_error "Go installation failed."
             return 1
         fi
@@ -175,36 +168,15 @@ install_go_env() {
         run_and_check "Installing $tool" go install "$tool"
     done
 
-    # Add Go bin to PATH
-    PROFILE=$(detect_profile)
-    if [ -n "$PROFILE" ] && ! grep -q 'export PATH=$PATH:$HOME/go/bin' "$PROFILE"; then
-        print_info "Adding Go binary path to your shell profile ($PROFILE)..."
-        echo '' >> "$PROFILE"
-        echo '# Add Go tools to PATH' >> "$PROFILE"
-        echo 'export PATH=$PATH:$HOME/go/bin' >> "$PROFILE"
-        print_success "Go path added. Please run 'source $PROFILE' or restart your terminal."
-    elif [ -z "$PROFILE" ]; then
-        print_error "Could not detect a shell profile file (.zshrc, .bashrc)."
-        print_info "Please add 'export PATH=\$PATH:\$HOME/go/bin' to your profile manually."
-    else
-        print_success "Go path already exists in your shell profile."
-    fi
 }
 
 install_ffmpeg() {
     print_header "FFmpeg Setup"
 
-    # Check for snap
-    if ! command_exists snap; then
-        print_error "Snap is not installed. Cannot install Go or FFmpeg."
-        print_info "Please install snapd first. On Debian/Ubuntu: sudo apt update && sudo apt install snapd"
-        return 1
-    fi
-
     # Install ffmpeg
     if ! command_exists ffmpeg; then
         print_info "Installing FFmpeg.."
-        if ! run_and_check "Installing FFmpeg via snap" sudo snap install ffmpeg --classic; then
+        if ! run_and_check "Installing FFmpeg" sudo apt install ffmpeg; then
             print_error "FFmpeg installation failed."
             return 1
         fi
@@ -217,7 +189,7 @@ install_ffmpeg() {
 main() {
     # Check for sudo permissions if needed for snap
     if ! command_exists sudo && ( ! command_exists go || ! command_exists ffmpeg ); then
-        print_error "sudo is not available, but is required to install Go and ffmpeg via snap."
+        print_error "sudo is not available, but is required to install Go and ffmpeg."
         exit 1
     fi
     
@@ -228,8 +200,6 @@ main() {
     install_ffmpeg
 
     print_header "Setup Complete!"
-    print_info "Please restart your terminal or run 'source $(detect_profile)' for all changes to take effect."
-    print_success "Enjoy your new development environment!"
 }
 
 # Run the main function
