@@ -32,6 +32,7 @@ if [ ! -f "$INIT_LOCK_FILE" ]; then
     cat <<-'TOML' > /opt/media-search/backend/go/configs/.env.local.toml
       [application]
       google_project_id = "${project_id}"
+      location = ${region}"
       signer_service_account_email = "${service_account_email}"
 
       [storage]
