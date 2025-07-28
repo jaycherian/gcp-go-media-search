@@ -45,7 +45,7 @@ func SetupListeners(config *cloud.Config, cloudClients *cloud.ServiceClients, ct
 
 	// Create the workflow for resizing high-resolution videos.
 	// This workflow is triggered by messages on the HiResTopic and uses FFmpeg to transcode files.
-	mediaResizeWorkflow := workflow.NewMediaResizeWorkflow(config, cloudClients, "/snap/bin/ffmpeg", &model.MediaFormatFilter{Width: "240"})
+	mediaResizeWorkflow := workflow.NewMediaResizeWorkflow(config, cloudClients, "ffmpeg", &model.MediaFormatFilter{Width: "240"})
 	// Assign the resize workflow as the command to be executed by the listener for the high-resolution topic.
 	cloudClients.PubSubListeners["HiResTopic"].SetCommand(mediaResizeWorkflow)
 	// Start the listener in a background goroutine. It will now begin receiving and processing messages from its subscription.

@@ -187,7 +187,7 @@ install_ffmpeg() {
 
 # --- Main Script Logic ---
 main() {
-    # Check for sudo permissions if needed for snap
+    # Check for sudo permissions
     if ! command_exists sudo && ( ! command_exists go || ! command_exists ffmpeg ); then
         print_error "sudo is not available, but is required to install Go and ffmpeg."
         exit 1
