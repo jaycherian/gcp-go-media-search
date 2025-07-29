@@ -6,7 +6,7 @@
 # for local development.
 #
 # USAGE: Run this script from the root of the project.
-# $ ./start.sh
+# $ ./start_servers.sh
 # ==============================================================================
 
 # Exit the script if any command fails

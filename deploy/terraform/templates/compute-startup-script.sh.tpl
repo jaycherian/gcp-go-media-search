@@ -4,7 +4,7 @@
 # --- Part 1: Run on every boot ---
 # Update and upgrade packages.
 echo "--- Updating system packages... ---"
-apt update && apt upgrade -y && apt autoremove -y
+apt update -qq && apt upgrade -qq -y && apt autoremove -qq -y
 
 # --- Part 2: Run only on first boot ---
 echo "--- Checking if first boot initialization is needed... ---"
@@ -30,14 +30,14 @@ if [ ! -f "$INIT_LOCK_FILE" ]; then
     echo "--> Creating backend .env.local.toml configuration file..."
     mkdir -p /opt/media-search/backend/go/configs
     cat <<-'TOML' > /opt/media-search/backend/go/configs/.env.local.toml
-      [application]
-      google_project_id = "${project_id}"
-      location = "${region}"
-      signer_service_account_email = "${service_account_email}"
+[application]
+google_project_id = "${project_id}"
+location = "${region}"
+signer_service_account_email = "${service_account_email}"
 
-      [storage]
-      high_res_input_bucket = "${high_res_bucket}"
-      low_res_output_bucket = "${low_res_bucket}"
+[storage]
+high_res_input_bucket = "${high_res_bucket}"
+low_res_output_bucket = "${low_res_bucket}"
 TOML
 
     echo "--> Creating service account key file..."

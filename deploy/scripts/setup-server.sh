@@ -148,7 +148,7 @@ install_go_env() {
     # Install Go
     if ! command_exists go; then
         print_info "Installing Go..."
-        if ! run_and_check "Installing Go" sudo apt -y install golang; then
+        if ! run_and_check "Installing Go" sudo apt -qq -y install golang; then
             print_error "Go installation failed."
             return 1
         fi
@@ -176,7 +176,7 @@ install_ffmpeg() {
     # Install ffmpeg
     if ! command_exists ffmpeg; then
         print_info "Installing FFmpeg.."
-        if ! run_and_check "Installing FFmpeg" sudo apt -y install ffmpeg; then
+        if ! run_and_check "Installing FFmpeg" sudo apt -qq -y install ffmpeg; then
             print_error "FFmpeg installation failed."
             return 1
         fi
