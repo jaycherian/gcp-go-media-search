@@ -157,7 +157,7 @@ func NewCloudServiceClients(ctx context.Context, config *Config) (cloud *Service
 			TopP:              genai.Ptr[float32](values.TopP),
 			TopK:              genai.Ptr[float32](values.TopK),
 			MaxOutputTokens:   values.MaxTokens,
-			SystemInstruction: &genai.Content{Parts: []*genai.Part{{Text: values.SystemInstructions}}},
+			SystemInstruction: genai.NewContentFromText(values.SystemInstructions, genai.RoleUser),
 			SafetySettings:    DefaultSafetySettings,
 			ResponseMIMEType:  values.OutputFormat,
 			Tools:             []*genai.Tool{},

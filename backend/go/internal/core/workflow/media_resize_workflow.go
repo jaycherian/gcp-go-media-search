@@ -45,6 +45,7 @@ type MediaResizeWorkflow struct {
 	storageClient    *storage.Client
 	outputBucketName string
 	chain            cor.Chain // The underlying chain of commands to be executed.
+	config           *cloud.Config
 }
 
 // Execute runs the media resize workflow by invoking the underlying command chain.
@@ -66,17 +67,9 @@ func (m *MediaResizeWorkflow) initializeChain() {
 	// Step 1: Parse the incoming Pub/Sub trigger message to get the GCS object details.
 	out.AddCommand(commands.NewMediaTriggerToGCSObject("gcs-topic-listener"))
 
-	// Step 2: Download the high-resolution video from GCS to a temporary local file.
-	// This makes the file accessible to the local FFmpeg process.
-	out.AddCommand(commands.NewGCSToTempFile("copy-from-gcs-to-temp", m.storageClient, "ffmpeg-tmp-"))
-
 	// Step 3: Execute the FFmpeg command on the local file to resize it.
 	// The `videoFormat.Width` determines the target resolution.
-	out.AddCommand(commands.NewFFMpegCommand("video-resize", m.ffmpegCommand, m.videoFormat.Width))
-
-	// Step 4: Upload the newly created low-resolution (resized) file from the local
-	// temporary directory to the designated low-resolution GCS bucket.
-	out.AddCommand(commands.NewGCSFileUpload("resized-file-upload-to-gcs", m.storageClient, m.outputBucketName))
+	out.AddCommand(commands.NewFFMpegCommand("video-resize", m.ffmpegCommand, m.videoFormat.Width, m.config))
 
 	// Assign the fully constructed chain to the workflow instance.
 	m.chain = out
@@ -117,7 +110,8 @@ func NewMediaResizeWorkflow(
 		ffmpegCommand:    ffmpegCommand,
 		videoFormat:      videoFormat,
 		storageClient:    serviceClients.StorageClient,
-		outputBucketName: config.Storage.LowResOutputBucket}
+		outputBucketName: config.Storage.LowResOutputBucket,
+		config:           config}
 	// Build the command chain for the new pipeline instance.
 	out.initializeChain()
 	return out
