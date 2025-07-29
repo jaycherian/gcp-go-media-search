@@ -11,6 +11,12 @@
             "mode": "auto",
             "program": "${workspaceFolder}/backend/go/server",
             "cwd": "${workspaceFolder}/backend/go",
+            "env": {
+                "GOOGLE_APPLICATION_CREDENTIALS": "/opt/media-search/backend/go/configs/media-search-sa-key.json",
+                "GOOGLE_GENAI_USE_VERTEXAI": "true",
+                "GOOGLE_CLOUD_PROJECT": "media-search-demo-16",
+                "GOOGLE_CLOUD_LOCATION": "us-central1"
+            }
         }
     ]
 }
