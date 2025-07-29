@@ -14,18 +14,16 @@
 
 ## create high res bucket and pubsub
 module "high_res_storage" {
-  source                    = "./modules/storage"
-  type                      = "high_res"
-  bucket_name               = var.high_res_bucket
-  region                    = local.location.region
-  app_service_account_email = google_service_account.media-search-sa.email
+  source = "./modules/storage"
+  type = "high_res"
+  bucket_name = var.high_res_bucket
+  region = local.location.region
 }
 
 ## create low res bucket and pubsub
 module "low_res_storage" {
-  source                    = "./modules/storage"
-  type                      = "low_res"
-  bucket_name               = var.low_res_bucket
-  region                    = local.location.region
-  app_service_account_email = google_service_account.media-search-sa.email
+  source = "./modules/storage"
+  type = "low_res"
+  bucket_name = var.low_res_bucket
+  region = local.location.region
 }

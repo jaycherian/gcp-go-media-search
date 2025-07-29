@@ -107,10 +107,7 @@ func (q *QuotaAwareGenerativeAIModel) GenerateContent(ctx context.Context, conte
 			// If an error occurred during the API call, start the retry logic.
 			// Get the current retry count from the context. `Value()` returns an interface{},
 			// so we must type-assert it to an `int`.
-			var retryCount int
-			if ctx.Value("retry") != nil {
-				retryCount = ctx.Value("retry").(int)
-			}
+			retryCount := ctx.Value("retry").(int)
 			if retryCount > 3 {
 				// If we have exceeded the maximum number of retries, give up and return an error.
 				return nil, errors.New("failed generation on max retries")
