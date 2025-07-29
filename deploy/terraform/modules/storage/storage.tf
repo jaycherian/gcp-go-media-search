@@ -84,3 +84,9 @@ resource "google_pubsub_topic_iam_binding" "topic_binding" {
   role    = "roles/pubsub.publisher"
   members = ["serviceAccount:${data.google_storage_project_service_account.gcs_account.email_address}"]
 }
+
+resource "google_storage_bucket_iam_member" "media_bucket_iam" {
+  bucket = google_storage_bucket.media_bucket.name
+  role   = "roles/storage.objectCreator"
+  member = "serviceAccount:${var.app_service_account_email}"
+}
