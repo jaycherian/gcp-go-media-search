@@ -144,9 +144,6 @@ func GenerateMultiModalResponse(
 	content []*genai.Content) (value string, err error) {
 	// Make the request to the generative model.
 	resp, err := model.GenerateContent(ctx, content)
-	// Record the token counts for both the prompt and the generated candidates.
-	inputTokenCounter.Add(ctx, int64(resp.UsageMetadata.PromptTokenCount))
-	outputTokenCounter.Add(ctx, int64(resp.UsageMetadata.CandidatesTokenCount))
 
 	// If there's an error, check if we can retry.
 	if err != nil {
@@ -160,6 +157,9 @@ func GenerateMultiModalResponse(
 			return "", err
 		}
 	}
+	// Record the token counts for both the prompt and the generated candidates.
+	inputTokenCounter.Add(ctx, int64(resp.UsageMetadata.PromptTokenCount))
+	outputTokenCounter.Add(ctx, int64(resp.UsageMetadata.CandidatesTokenCount))
 
 	// If the request was successful, process the response.
 	value = ""
