@@ -5,18 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Server",
+            "name": "Attach to Running Server in Debug Mode",
             "type": "go",
-            "request": "launch",
-            "mode": "auto",
-            "program": "${workspaceFolder}/backend/go/server",
-            "cwd": "${workspaceFolder}/backend/go",
-            "env": {
-                "GOOGLE_APPLICATION_CREDENTIALS": "/opt/media-search/backend/go/configs/media-search-sa-key.json",
-                "GOOGLE_GENAI_USE_VERTEXAI": "true",
-                "GOOGLE_CLOUD_PROJECT": "media-search-demo-16",
-                "GOOGLE_CLOUD_LOCATION": "us-central1"
-            }
+            "request": "attach",
+            "mode": "remote",
+            "remotePath": "${workspaceFolder}/backend/go",
+            "port": 2345,
+            "host": "127.0.0.1"
         }
-    ]
+   ]
 }
