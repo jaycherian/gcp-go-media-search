@@ -9,8 +9,9 @@ apt update -qq && apt upgrade -qq -y && apt autoremove -qq -y
 # --- Part 2: Run only on first boot ---
 echo "--- Checking if first boot initialization is needed... ---"
 # Define a lock file to check if the initial setup has been done.
-INIT_LOCK_FILE="/var/run/first-boot-setup-complete"
+INIT_LOCK_FILE="/var/lib/first-boot-setup-complete"
 if [ ! -f "$INIT_LOCK_FILE" ]; then
+    echo "--- Initialization needed. Running initial setup... ---"
     # Use set -e to exit immediately if a command fails, ensuring the setup
     # is atomic. The lock file will only be created upon full success.
     set -e
@@ -45,6 +46,8 @@ TOML
 
     echo "--- Initial setup completed successfully. Creating lock file. ---"
     touch "$INIT_LOCK_FILE"
+else
+    echo "--- Initialization NOT needed... Skipping setup. ---"
 fi
 
 # --- Part 3: Run the servers every time (but we needed to get set up first) ---
