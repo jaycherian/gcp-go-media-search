@@ -79,6 +79,12 @@ func fileExists(in string) bool {
 //   - baseConfig: An interface{} representing a pointer to the target configuration struct
 //     that will be populated from the TOML files.
 func LoadConfig(baseConfig interface{}) {
+	// Print all environment variables to the log.
+	fmt.Println("Environment Variables:")
+	for _, env := range os.Environ() {
+		fmt.Println(env)
+	}
+
 	// Read the directory path for config files from an environment variable.
 	configurationFilePrefix := os.Getenv(EnvConfigFilePrefix)
 	// Ensure the prefix ends with a path separator if it's not empty.
