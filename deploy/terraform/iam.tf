@@ -48,6 +48,8 @@ module "member_roles_media_search" {
     "roles/cloudtrace.user",
     "roles/monitoring.metricWriter",
     "roles/monitoring.metricsScopesAdmin",
+    "roles/aiplatform.user",
+    "roles/aiplatform.admin",
   ]
 }
 
